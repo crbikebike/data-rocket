@@ -16,10 +16,10 @@ The largest needs right now are enhancing the data pull process, tests, logging,
 
 1. Ensure that config variables are set in Heroku or the db won't be able to connect.
 (https://devcenter.heroku.com/articles/config-vars)
-2. Clone repo from Heroku
+2. Clone repo
 ``` bash
-$ heroku git:clone -a rev-datarocket
-$ cd rev-datarocket
+$ git clone https://github.com/RevUnit/data-rocket/
+$ cd your dir
 ```
 3. Make changes, add, commit, and deploy them.  Note that if you add a new module it needs to be added to the requirements.txt or the app will fail.
 ``` bash
