@@ -24,7 +24,7 @@ $ cd rev-datarocket
 3. Make changes, add, commit, and deploy them.  Note that if you add a new module it needs to be added to the requirements.txt or the app will fail.
 ``` bash
 $ git add .
-$ git commit -am "make it better"
+$ git commit -am "the rocket power is now over 9000"
 $ git push heroku master
 ```
 4. Turn down the web dyno
