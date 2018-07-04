@@ -7,7 +7,7 @@ from collections import deque
 # Grabs all Harvest Data based on the "FROM_DATE"
 class Harvester(object):
 
-    def __init__(self, auth_token, harvest_account_id, user_agent, from_date, is_test=False):
+    def __init__(self, auth_token, harvest_account_id, user_agent, is_test=False):
         self.entry_per_page = 100
         self.harvest_base_url = 'https://api.harvestapp.com/v2/'
 
@@ -15,32 +15,37 @@ class Harvester(object):
         self.harvest_headers.update(Authorization = auth_token)
         self.harvest_headers.update({'Harvest-Account-ID': harvest_account_id})
         self.harvest_headers.update({'User-Agent': user_agent})
-
         self.harvest_params = {}
         self.harvest_params.update(page_per=self.entry_per_page)
-        self.harvest_params.update({'from': from_date})
-        self.harvest_params.update({'is_running': 'false'})
 
+    def get_request(self, api_url, extra_params={}):
 
-    def harvest_actuals(self):
-        time_entries = []
-        api_url = 'time_entries'
         full_url = self.harvest_base_url + api_url
         headers = self.harvest_headers
         params = self.harvest_params
+        params.update(extra_params)
+
+        r = requests.get(url=full_url, headers=headers, params=params)
+        json_r = json.loads(r.text)
+
+        return json_r
+
+    def harvest_actuals(self, from_date):
+        time_entries = []
+        api_url = 'time_entries'
+        time_entry_params = {}
+        time_entry_params.update({'from': from_date})
+        time_entry_params.update({'is_running': 'false'})
 
         # get page numbers, build queue
-        r = requests.get(url=full_url, headers=headers, params=params)
-        actuals_jr = json.loads(r.text)
+        actuals_jr = self.get_request(api_url=api_url, extra_params=time_entry_params)
         page_qty = actuals_jr['total_pages']
         page_queue = deque(range(1, (page_qty + 1)))
 
         while len(page_queue) > 0:
             page_num = page_queue.popleft()
-            params.update(page=page_num)
-            r = requests.get(url=full_url, headers=headers, params=params)
-
-            page_jr = json.loads(r.text)
+            time_entry_params.update(page=page_num)
+            page_jr = self.get_request(api_url=api_url, extra_params=time_entry_params)
 
             print('Processing Page: ' + str(page_jr['page']) + ' out of ' + str(page_jr['total_pages']))
 
@@ -73,6 +78,29 @@ class Harvester(object):
         actuals_jr.update(time_entries=time_entries)
 
         return actuals_jr
+
+    # def getAPIData(self, root_key):
+    #
+    #     myt = self.get_request()
+    #     # get page numbers, build queue
+    #     page_qty = api_jr['total_pages']
+    #     page_queue = deque(range(1, (page_qty + 1)))
+    #
+    #     api_list = []
+    #     while len(page_queue) > 0:
+    #         page_num = page_queue.popleft()
+    #         params.update(page=page_num)
+    #         r = requests.get(url=full_url, headers=headers, params=params)
+    #
+    #         page_jr = json.loads(r.text)
+    #         print('Processing Page: ' + str(page_jr['page']) + ' out of ' + str(page_jr['total_pages']))
+    #
+    #         for entity in page_jr[root_key]:
+    #             api_list.append(entity)
+    #
+    #     api_jr.update({root_key:api_list})
+    #
+    #     return api_jr
 
 
 # Grabs Forecast data Not complete at the moment
