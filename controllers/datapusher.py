@@ -3,7 +3,6 @@
 ## Imports
 from controllers.dbcontroller import DataMaster
 
-
 ##  Classes
 # This class receives data from the main app and calls its DataMaster to CRUD records
 class DataActor(object):

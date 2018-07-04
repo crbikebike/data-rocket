@@ -4,6 +4,7 @@
 import requests, json
 from collections import deque
 
+
 # Grabs all Harvest Data based on the "FROM_DATE"
 class Harvester(object):
 
@@ -11,11 +12,42 @@ class Harvester(object):
         self.entry_per_page = 100
         self.harvest_base_url = 'https://api.harvestapp.com/v2/'
         self.harvest_headers = {}
-        self.harvest_headers.update(Authorization = auth_token)
+        self.harvest_headers.update(Authorization=auth_token)
         self.harvest_headers.update({'Harvest-Account-ID': harvest_account_id})
         self.harvest_headers.update({'User-Agent': user_agent})
         self.harvest_params = {}
         self.harvest_params.update(page_per=self.entry_per_page)
+
+    # Filter results from larger dictionary by subtracting a set of its keys against a given list
+    def __filter_results__(self, results_dict, filter_list):
+        result_keys = set(results_dict.keys())
+        filter_set = set(filter_list)
+
+        pop_list = list(result_keys - filter_set)
+        for pop_key in pop_list:
+            results_dict.pop(pop_key)
+
+        return results_dict
+
+    # Cycle through a dict result with sub-dicts and return a flattened dict
+    def __flatten_results__(self, results_dict):
+        # The fields we care about all have, id, name, and code as sub-keys
+        filter_list = ['id', 'name', 'code']
+        flattened_dict = results_dict.copy()
+
+        # Find each parent key:value that is a dict and flatten
+        for pk, pv in results_dict.items():
+            if type(pv) is dict:
+                pv = self.__filter_results__(results_dict=pv, filter_list=filter_list)
+                flattened_fields = {'{pk}_{sk}'.format(pk=pk, sk=sk): sv
+                                    for sk, sv in pv.items()}
+                flattened_dict.update(flattened_fields)
+                flattened_dict.pop(pk)
+            else:
+                # If the value isn't a dict, do nothing
+                pass
+
+        return flattened_dict
 
     # Will hit a harvest API and return result as json object
     def __get_request__(self, api_url, extra_params={}):
@@ -39,7 +71,7 @@ class Harvester(object):
         api_params.update(extra_params)
         api_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
 
-        # get page numbers, build queue
+        # Get page numbers, build queue
         page_qty = api_json_result['total_pages']
         page_queue = deque(range(1, (page_qty + 1)))
 
@@ -49,18 +81,22 @@ class Harvester(object):
             api_params.update(page=page_num)
             page_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
             api_entities = page_json_result[root_key]
-            print('Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
+            print(
+                'Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
 
             # If there are keys to filter, do that. Otherwise just add the entire resposne to the api_list
             for entity in api_entities:
                 if filters:
-                    entity = {item: entity[item] if item in entity.keys() else '' for item in filters}
+                    entity = self.__filter_results__(results_dict=entity, filter_list=filters)
                 else:
+                    # Don't flter, just pass on the whole entity
                     pass
 
-                api_list.append(entity)
+                # Some results have sub-dictionaries so we want to flatten them
+                flat_entity = self.__flatten_results__(entity)
+                api_list.append(flat_entity)
 
-        api_json_result.update({root_key:api_list})
+        api_json_result.update({root_key: api_list})
 
         return api_json_result
 
@@ -113,14 +149,29 @@ class Harvester(object):
 
         return actuals_jr
 
+    def get_harvest_time_entries(self, from_date):
+        # Name the keys you care about from the api
+        filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
+                   'user', 'client', 'project', 'task']
+        time_entry_params = {}
+        time_entry_params.update({'from': from_date})
+        time_entry_params.update({'is_running': 'false'})
+
+        time_entry_dict = self.__get_api_data__(root_key='time_entries', filters=filters,
+                                                extra_params=time_entry_params)
+
+        return time_entry_dict
+
+    # Returns full set of users from Harvest, filtered by the filters list
     def get_harvest_users(self):
         # Name the keys you care about from the api
-        filters = ['id','first_name','last_name','email','timezone','weekly_capacity','is_contractor','is_active','roles',
-                'avatar_url','created_at','updated_at']
+        filters = ['id', 'first_name', 'last_name', 'email', 'timezone', 'weekly_capacity', 'is_contractor',
+                   'is_active', 'roles', 'avatar_url', 'created_at', 'updated_at']
 
-        users_dict = self.__get_api_data__(root_key='users', filters = filters)
+        users_dict = self.__get_api_data__(root_key='users', filters=filters)
 
         return users_dict
+
 
 # Grabs Forecast data Not complete at the moment
 class Forecaster(object):
@@ -128,8 +179,7 @@ class Forecaster(object):
     def __init__(self, forecast_account_id, user_agent, auth_token):
         self.forecast_base_url = 'https://api.forecastapp.com/'
 
-
         self.forecast_headers = {}
-        self.forecast_headers.update(Authorization = auth_token)
+        self.forecast_headers.update(Authorization=auth_token)
         self.forecast_headers.update({'Forecast-Account-ID': forecast_account_id})
         self.forecast_headers.update({'User-Agent': user_agent})
