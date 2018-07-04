@@ -19,16 +19,14 @@ from_date = conf['FROM_DATE']
 # Classes
 # This class will transform the Harvest and Forecast Data
 class Munger(object):
-    def __init__(self, isTest=False):
-        pass
+
+    def __init__(self, is_test=False):
+        self.harv = Harvester(auth_token=auth_token, harvest_account_id=harvest_account_id,
+                            user_agent=user_agent, is_test=is_test)
 
     # Do things like calculated column for total entry value
     def get_munged_harvest_time_entries(self):
-        # Instantiate harv the friendly Harvest API grabber
-        harv = Harvester(auth_token=auth_token, harvest_account_id=harvest_account_id,
-                         user_agent=user_agent)
-
-        entries = harv.get_harvest_time_entries(from_date=from_date)
+        entries = self.harv.get_harvest_time_entries(from_date=from_date)
 
         # Cycle through each entry and perform needed transformations
         for entry in entries['time_entries']:
