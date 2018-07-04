@@ -4,6 +4,9 @@ controllers/__pycache__/
 *.py[cod]
 *$py.class
 
+# Scrap files
+scraps/
+
 # idea folder
 .idea/
 

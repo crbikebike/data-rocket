@@ -10,13 +10,22 @@ class Harvester(object):
     def __init__(self, auth_token, harvest_account_id, user_agent, is_test=False):
         self.entry_per_page = 100
         self.harvest_base_url = 'https://api.harvestapp.com/v2/'
-
         self.harvest_headers = {}
         self.harvest_headers.update(Authorization = auth_token)
         self.harvest_headers.update({'Harvest-Account-ID': harvest_account_id})
         self.harvest_headers.update({'User-Agent': user_agent})
         self.harvest_params = {}
         self.harvest_params.update(page_per=self.entry_per_page)
+
+    # Returns True if it finds a dict key that matches an item in the filter list.  Else False.
+    def __key_checker__(self, filter_list, result_dict):
+
+        for item in filter_list:
+            if item in result_dict.keys():
+                return True
+            else:
+                print("Did not find match for item: {}".format(item))
+                return False
 
     def __get_request__(self, api_url, extra_params={}):
 
@@ -33,37 +42,32 @@ class Harvester(object):
     def __get_api_data__(self, root_key, extra_params={}, filters=[]):
         api_params = {}
         api_params.update(extra_params)
-        api_jr = self.__get_request__(api_url=root_key, extra_params=api_params)
+        api_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
 
         # get page numbers, build queue
-        page_qty = api_jr['total_pages']
+        page_qty = api_json_result['total_pages']
         page_queue = deque(range(1, (page_qty + 1)))
 
         api_list = []
         while len(page_queue) > 0:
             page_num = page_queue.popleft()
             api_params.update(page=page_num)
-            page_jr = self.__get_request__(api_url=root_key, extra_params=api_params)
-            api_entities = page_jr[root_key]
-            print('Processing Page: ' + str(page_jr['page']) + ' out of ' + str(page_jr['total_pages']))
+            page_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
+            api_entities = page_json_result[root_key]
+            print('Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
 
-            # If there are keys to filter by, do that. Otherwise just add the entire resposne to the api_list
-            if filters:
-                for entity in api_entities:
-                    filtered_entity = {}
-                    for item in filters:
-                        if item in entity.keys():
-                            filtered_entity.update({item:entity[item]})
-                        else:
-                            print('did not find filter item')
-                    api_list.append(filtered_entity)
-            else:
-                for entity in api_entities:
-                    api_list.append(entity)
+            # If there are keys to filter, do that. Otherwise just add the entire resposne to the api_list
+            for entity in api_entities:
+                if filters:
+                    entity = {item: entity[item] if item in entity.keys() else '' for item in filters}
+                else:
+                    pass
 
-        api_jr.update({root_key:api_list})
+                api_list.append(entity)
 
-        return api_jr
+        api_json_result.update({root_key:api_list})
+
+        return api_json_result
 
     def get_harvest_actuals(self, from_date):
         time_entries = []
