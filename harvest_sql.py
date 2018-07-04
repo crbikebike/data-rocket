@@ -28,7 +28,7 @@ if __name__ == '__main__':
     harv = Harvester(auth_token=auth_token,harvest_account_id=harvest_account_id,
                      user_agent=user_agent)
     # Place Harvest entries into a dictionary
-    actuals = harv.harvest_actuals(from_date=from_date)
+    actuals = harv.get_harvest_actuals(from_date=from_date)
 
     # Instantiate a DataActor - Our friend that will talk to PostgreSQL  :)
     da = DataActor()
