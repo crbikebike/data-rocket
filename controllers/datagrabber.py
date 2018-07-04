@@ -17,28 +17,23 @@ class Harvester(object):
         self.harvest_params = {}
         self.harvest_params.update(page_per=self.entry_per_page)
 
-    # Returns True if it finds a dict key that matches an item in the filter list.  Else False.
-    def __key_checker__(self, filter_list, result_dict):
-
-        for item in filter_list:
-            if item in result_dict.keys():
-                return True
-            else:
-                print("Did not find match for item: {}".format(item))
-                return False
-
+    # Will hit a harvest API and return result as json object
     def __get_request__(self, api_url, extra_params={}):
-
         full_url = self.harvest_base_url + api_url
         headers = self.harvest_headers
         params = self.harvest_params
         params.update(extra_params)
 
-        r = requests.get(url=full_url, headers=headers, params=params)
-        json_r = json.loads(r.text)
+        try:
+            r = requests.get(url=full_url, headers=headers, params=params)
+            json_r = json.loads(r.text)
+        except Exception as e:
+            json_r = {}
+            print('Could not hit endpoint {ep} because {e}'.format(ep=api_url, e=e))
 
         return json_r
 
+    # Accepts params for Harvest endpoint and returns result set. Meant to be portable for all v2 endpoints.
     def __get_api_data__(self, root_key, extra_params={}, filters=[]):
         api_params = {}
         api_params.update(extra_params)

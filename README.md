@@ -43,7 +43,7 @@ $ python harvest_sql.py
 
 ### root Directory
 
-**harvest_sql.py**
+**main.py**
 
 The main workhorse.  This file pulls data from Harvest (Forecast coming soon!) and inserts it to the PostgreSQL database
 
