@@ -3,7 +3,7 @@
 # Imports
 import requests, json
 from collections import deque
-
+import datetime
 
 # Grabs all Harvest Data based on the "FROM_DATE"
 class Harvester(object):
@@ -17,12 +17,14 @@ class Harvester(object):
         self.harvest_headers.update({'User-Agent': user_agent})
         self.harvest_params = {}
         self.harvest_params.update(page_per=self.entry_per_page)
+        self.is_test = is_test
 
     # Filter results from larger dictionary by subtracting a set of its keys against a given list
     def __filter_results__(self, results_dict, filter_list):
         result_keys = set(results_dict.keys())
         filter_set = set(filter_list)
 
+        # Compare the two sets, pop all keys that are not in the filter set
         pop_list = list(result_keys - filter_set)
         for pop_key in pop_list:
             results_dict.pop(pop_key)
@@ -154,7 +156,12 @@ class Harvester(object):
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
         time_entry_params = {}
-        time_entry_params.update({'from': from_date})
+        if self.is_test:
+            now = datetime.datetime.now()
+            timemachine = now - datetime.timedelta(days=2)
+            time_entry_params.update({'from': timemachine})
+        else:
+            time_entry_params.update({'from': from_date})
         time_entry_params.update({'is_running': 'false'})
 
         time_entry_dict = self.__get_api_data__(root_key='time_entries', filters=filters,

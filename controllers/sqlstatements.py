@@ -30,8 +30,6 @@ sql_creates = [
 sql_reads = {}
 
 
-
-
 sqldict_test = {
     'create_entry_table': """CREATE TABLE IF NOT EXISTS harvest_entries_test
     (entry_id int PRIMARY KEY,

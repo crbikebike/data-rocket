@@ -1,6 +1,6 @@
 # Imports
 from controllers.datapusher import DataActor
-from controllers.datagrabber import Harvester, Forecaster
+from controllers.datamunger import Munger
 from data_rocket_conf import config as conf
 
 
@@ -24,11 +24,11 @@ from_date = conf['FROM_DATE']
 ### Main Function - All the work happens here.
 if __name__ == '__main__':
 
-    # Instantiate harv the friendly Harvest API grabber
-    harv = Harvester(auth_token=auth_token,harvest_account_id=harvest_account_id,
-                     user_agent=user_agent)
-    # Place Harvest entries into a dictionary
-    actuals = harv.get_harvest_actuals(from_date=from_date)
+    # Instantiate our friendly data Munger
+    mungy = Munger()
+
+    # Place Munged Harvest entries into a dictionary
+    actuals = mungy.get_munged_harvest_time_entries()
 
     # Instantiate a DataActor - Our friend that will talk to PostgreSQL  :)
     da = DataActor()
@@ -37,9 +37,9 @@ if __name__ == '__main__':
     da.drop_tables()
     da.create_tables()
 
-    # Loop through each time entry in the dictionary and insert the row into the db
-    for entry in actuals['time_entries']:
-        da.insert_dict(dict=entry)
+    # Get the list of time entries to insert, send them to the DataActor
+    time_entry_list = actuals['time_entries']
+    da.insert_dict_list(time_entry_list)
 
     # Tidy up before leaving - close DB connection
     da.close_conn()
