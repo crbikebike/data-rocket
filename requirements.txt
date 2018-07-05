@@ -4,4 +4,4 @@ flask
 psycopg2
 datetime
 requests
-sqlalchemy
+pony

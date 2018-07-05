@@ -45,6 +45,10 @@ class Harvester(object):
                                     for sk, sv in pv.items()}
                 flattened_dict.update(flattened_fields)
                 flattened_dict.pop(pk)
+            elif type(pv) is list:
+                enum_pv = dict(enumerate(pv))
+                json_pv = json.dumps(enum_pv)
+                flattened_dict.update(roles=json_pv)
             else:
                 # If the value isn't a dict, do nothing
                 pass
