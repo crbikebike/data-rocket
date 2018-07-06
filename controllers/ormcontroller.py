@@ -107,6 +107,11 @@ set_sql_debug(False)
 # Create ORM mapping, tables if necessary
 db.generate_mapping(create_tables=True)
 
+"""
+The below insert functions each insert data for their namesake.  They assume being passed a list of dictionaries with
+column names and values that correspond to the ORM classes above.
+"""
+
 @db_session
 def insert_time_entries_list(time_entry_list):
     # Loop through every entry in the list and write to db
