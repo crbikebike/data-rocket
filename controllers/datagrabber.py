@@ -106,55 +106,6 @@ class Harvester(object):
 
         return api_json_result
 
-    def get_harvest_actuals(self, from_date):
-        time_entries = []
-        api_url = 'time_entries'
-        time_entry_params = {}
-        time_entry_params.update({'from': from_date})
-        time_entry_params.update({'is_running': 'false'})
-
-        # get page numbers, build queue
-        actuals_jr = self.__get_request__(api_url=api_url, extra_params=time_entry_params)
-        page_qty = actuals_jr['total_pages']
-        page_queue = deque(range(1, (page_qty + 1)))
-
-        while len(page_queue) > 0:
-            page_num = page_queue.popleft()
-            time_entry_params.update(page=page_num)
-            page_jr = self.__get_request__(api_url=api_url, extra_params=time_entry_params)
-
-            print('Processing Page: ' + str(page_jr['page']) + ' out of ' + str(page_jr['total_pages']))
-
-            # flatten the time_entries json
-            for entry in page_jr['time_entries']:
-                time_entry = {}
-                time_entry.update(entry_id=entry['id'])
-                time_entry.update(user_id=entry['user']['id'])
-                time_entry.update(user_name=entry['user']['name'])
-                time_entry.update(client_id=entry['client']['id'])
-                time_entry.update(client_name=entry['client']['name'])
-                time_entry.update(harvest_project_id=entry['project']['id'])
-                time_entry.update(harvest_project_name=entry['project']['name'])
-                time_entry.update(harvest_project_code=entry['project']['code'])
-                time_entry.update(task_id=entry['task']['id'])
-                time_entry.update(task_name=entry['task']['name'])
-                time_entry.update(billable_rate=entry['billable_rate'])
-                time_entry.update(created_at=entry['created_at'])
-                time_entry.update(hours=entry['hours'])
-                time_entry.update(spent_date=entry['spent_date'])
-                time_entry.update(updated_at=entry['updated_at'])
-                time_entry.update(billable=entry['billable'])
-                if not entry['billable_rate']:
-                    time_entry.update(entry_amount=0)
-                else:
-                    time_entry.update(entry_amount=(entry['hours'] * entry['billable_rate']))
-
-                time_entries.append(time_entry)
-
-        actuals_jr.update(time_entries=time_entries)
-
-        return actuals_jr
-
     def get_harvest_time_entries(self, from_date):
         # Name the keys you care about from the api
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
