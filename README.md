@@ -1,4 +1,4 @@
-# Data Rocket
+# Data Rocket 2.0
 
 > Launching RevUnit's data to the moon (data warehouse)
 
@@ -8,7 +8,7 @@ It is a Python3 app and pushes to a PostgreSQL database.
 
 Please consult Chris Race before changing database fields and formatting.  This data powers several dashboards that are dependent on the current schema.
 
-The largest needs right now are enhancing the data pull process, tests, logging, and error handling.
+The largest needs right now are enhancing the data pull process, testing coverage, logging, and error handling.  All the fun stuff.
 
 ## Build Setup
 
@@ -23,7 +23,6 @@ $ cd your dir
 ```
 3. Make changes, add, commit, and deploy them.  Note that if you add a new module it needs to be added to the requirements.txt or the app will fail.
 ``` bash
-$ git add .
 $ git commit -am "the rocket power is now over 9000"
 $ git push heroku master
 ```
@@ -35,7 +34,7 @@ $ heroku ps:scale web=0
 
    Setup a job to run nightly in the scheduler console.
 ``` bash
-$ python harvest_sql.py
+$ python main.py
 ```
 
 
@@ -45,7 +44,7 @@ $ python harvest_sql.py
 
 **main.py**
 
-The main workhorse.  This file pulls data from Harvest (Forecast coming soon!) and inserts it to the PostgreSQL database
+The main facilitator.  This file pulls data from Harvest (Forecast coming soon!) and inserts it to the PostgreSQL database
 
 
 **data_rocket_conf.py**
@@ -62,13 +61,18 @@ Setup files to ensure Heroku can deploy
 
 ### controllers Directory
 
-**dbcontroller.py**
+**ormcontroller.py**
 
 Contains the classes that connect to and perform the CRUD functions on the database
 
-*Primary Usage*
-Call the DataActor() class to interact with the database.
+**datagrabber.py**
 
-**sqlstatements.py**
+Holds all connectivity to Harvest and (coming soon!) Forecast apis
 
-A set of dictionaries containing SQL statements used by the dbcontroller.py classes.
+**datamunger.py**
+
+Performs all data manipulation and transformation needed prior to database insertion
+
+**datapusher.py**
+
+Currently not doing anything.  Ideally will clean up clutter on main.py in future builds

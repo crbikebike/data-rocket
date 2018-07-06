@@ -1,37 +1,25 @@
 ### Purpose of file: This is the controller that will interact with all main app files ###
 
 ## Imports
-from controllers.dbcontroller import DataMaster
-import controllers.ormcontroller
+import controllers.ormcontroller as orm
 
 ##  Classes
-# This class receives data from the main app and calls its DataMaster to CRUD records
+# This class needs to be remade to take the clutter from the main.py file
 class DataActor(object):
 
     def __init__(self, is_test=False):
         if is_test == True:
-            self.dm = DataMaster(is_test=True)
+            pass
         else:
-            self.dm = DataMaster()
+            pass
 
-    def create_tables(self):
-        self.dm.create_entry_table()
+    """
+    ### Needed Functions ###
 
-    def drop_tables(self):
-        self.dm.drop_entry_table()
+    Find existing rows, update if needed - probably only look back 30 days since the entries get locked
 
-    def close_conn(self):
-        self.dm.dbconn.conn.close()
+    Use the Harvest Param to only pull since last update, only pull things after that entry 
+        - Until that, will just drop the table and re-insert everything
 
-    def insert_dict(self, dict):
-        self.columns = dict.keys()
-        self.values = [dict[column] for column in self.columns]
-        self.dm.insert_entry_table(self.columns, self.values)
-
-    def insert_dict_list(self, dict_list):
-
-        # Hope one day to replace this with the psycopg2.extras.execute_batch() method - will help with larger datasets
-        for row in dict_list:
-            self.columns = row.keys()
-            self.values = [row[column] for column in self.columns]
-            self.dm.insert_entry_table(self.columns, self.values)
+    Count rows being inserted - give status when, catch error and note where it left off
+    """

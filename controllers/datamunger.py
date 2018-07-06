@@ -25,7 +25,7 @@ class Munger(object):
                             user_agent=user_agent, is_test=is_test)
 
     # Do things like calculated column for total entry value
-    def get_munged_harvest_time_entries(self):
+    def munge_harvest_time_entries(self):
         entries = self.harv.get_harvest_time_entries(from_date=from_date)
 
         # Cycle through each entry and perform needed transformations
@@ -42,14 +42,39 @@ class Munger(object):
     def munge_forecast_assignments(self,):
         pass
 
-    # Combine the Harvest and Forecast User Lists, add fields, calculate fields
-    def munge_user_list(self,):
-        pass
+    # Combine the Harvest and Forecast User/People Lists, add fields, calculate fields
+    def munge_person_list(self,):
+        people = self.harv.get_harvest_users()
+
+        for person in people['users']:
+            # Fillers until goals are input
+            person.update(weekly_goal=0)
+            person.update(yearly_goal=0)
+
+
+        return people
 
     # Combine the Harvest and Forecast Project Lists
     def munge_project_list(self,):
-        pass
+        projects = self.harv.get_harvest_projects()
+
+        # Find projects that have no code and enter a zero
+        for project in projects['projects']:
+            if not project['code']:
+                project.update(code=0)
+            else:
+                pass
+
+        return projects
+
+    # Get the Harvest Tasks List
+    def munge_task_list(self,):
+        tasks = self.harv.get_harvest_tasks()
+
+        return tasks
 
     # Combine the Harvest and Forecast Client Lists
-    def munge_project_list(self,):
-        pass
+    def munge_client_list(self, ):
+        clients = self.harv.get_harvest_clients()
+
+        return clients
