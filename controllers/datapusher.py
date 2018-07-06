@@ -2,6 +2,7 @@
 
 ## Imports
 from controllers.dbcontroller import DataMaster
+import controllers.ormcontroller
 
 ##  Classes
 # This class receives data from the main app and calls its DataMaster to CRUD records
@@ -34,4 +35,3 @@ class DataActor(object):
             self.columns = row.keys()
             self.values = [row[column] for column in self.columns]
             self.dm.insert_entry_table(self.columns, self.values)
-

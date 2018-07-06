@@ -1,3 +1,7 @@
+"""
+This file is being deprecated in favor of the ORM solution in the ormcontroller.py file
+"""
+
 sqldict = {
     'create_entry_table': """CREATE TABLE IF NOT EXISTS harvest_entries
     (entry_id int PRIMARY KEY,
