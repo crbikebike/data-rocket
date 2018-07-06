@@ -110,11 +110,12 @@ class Harvester(object):
         return api_json_result
 
     """
-    All Functions below starting with get_ correspond to a Harvest v2 API endpoint by the same name.
+    All Functions below starting with get_ correspond to a Harvest v2 API endpoint by the same name as the root_key var
     They utilize the above functions to get data and do light formatting to prepare for db entry
     """
 
     def get_harvest_time_entries(self, from_date):
+        root_key = 'time_entries'
         # Name the keys you care about from the api
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
@@ -131,42 +132,46 @@ class Harvester(object):
         # Prevent pulling running timers
         time_entry_params.update({'is_running': 'false'})
 
-        time_entry_dict = self.__get_api_data__(root_key='time_entries', filters=filters,
+        time_entry_dict = self.__get_api_data__(root_key=root_key, filters=filters,
                                                 extra_params=time_entry_params)
 
         return time_entry_dict
 
     def get_harvest_users(self):
+        root_key = 'users'
         # Name the keys you care about from the api
         filters = ['id', 'first_name', 'last_name', 'email', 'timezone', 'weekly_capacity', 'is_contractor',
                    'is_active', 'roles', 'avatar_url', 'created_at', 'updated_at']
 
-        users_dict = self.__get_api_data__(root_key='users', filters=filters)
+        users_dict = self.__get_api_data__(root_key=root_key, filters=filters)
 
         return users_dict
 
     def get_harvest_clients(self):
+        root_key = 'clients'
         # Name the keys you care about from the api
         filters = ['id', 'name', 'is_active', 'created_at', 'updated_at']
 
-        clients_dict = self.__get_api_data__(root_key='clients', filters=filters)
+        clients_dict = self.__get_api_data__(root_key=root_key, filters=filters)
 
         return clients_dict
 
     def get_harvest_projects(self):
+        root_key = 'projects'
         # Name the keys you care about from the api
         filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'budget', 'budget_is_monthly',
                    'created_at', 'updated_at', 'starts_on', 'ends_on', 'client']
 
-        projects_dict = self.__get_api_data__(root_key='projects', filters=filters)
+        projects_dict = self.__get_api_data__(root_key=root_key, filters=filters)
 
         return projects_dict
 
     def get_harvest_tasks(self):
+        root_key = 'tasks'
         # Name the keys you care about from the api
         filters = ['id', 'name']
 
-        tasks_dict = self.__get_api_data__(root_key='tasks', filters=filters)
+        tasks_dict = self.__get_api_data__(root_key=root_key, filters=filters)
 
         return tasks_dict
 

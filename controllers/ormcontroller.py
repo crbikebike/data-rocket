@@ -14,6 +14,7 @@ from psycopg2.extensions import AsIs
 # Define the required Database object for PonyORM
 db = Database()
 
+
 # Create User ORM Object
 class Person(db.Entity):
     id = PrimaryKey(int, auto=False)
@@ -32,6 +33,7 @@ class Person(db.Entity):
     avatar_url = Optional(str)
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
+
 
 # Create Harvest Time Entry ORM Object
 class TimeEntry(db.Entity):
@@ -52,6 +54,7 @@ class TimeEntry(db.Entity):
     project_code = Optional(str)
     task_id = Required('Task')
     task_name = Optional(str)
+
 
 # Create Project ORM Object
 class Project(db.Entity):
@@ -83,11 +86,13 @@ class Client(db.Entity):
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
 
+
 # Create Task ORM Object
 class Task(db.Entity):
     id = PrimaryKey(int, auto=False)
     name = Optional(str)
     time_entries = Set(TimeEntry)
+
 
 # Create log table
 class DataRocketLog(db.Entity):
@@ -95,6 +100,7 @@ class DataRocketLog(db.Entity):
     event_description =  Required(str)
     event_datetime = Required(datetime)
     event_success = Required(bool)
+
 
 # Parse URL to get connection info
 pg_url = urlparse(conf['DB_CONN'])
@@ -112,6 +118,7 @@ The below insert functions each insert data for their namesake.  They assume bei
 column names and values that correspond to the ORM classes above.
 """
 
+
 @db_session
 def insert_time_entries_list(time_entry_list):
     # Loop through every entry in the list and write to db
@@ -119,6 +126,7 @@ def insert_time_entries_list(time_entry_list):
         columns = AsIs(','.join(entry.keys()))
         values = tuple([entry[column] for column in entry.keys()])
         db.execute("INSERT INTO public.timeentry ($columns) VALUES $values")
+
 
 @db_session
 def insert_tasks_list(tasks_list):
@@ -128,6 +136,7 @@ def insert_tasks_list(tasks_list):
         values = tuple([task[column] for column in task.keys()])
         db.execute("INSERT INTO public.task ($columns) VALUES $values")
 
+
 @db_session
 def insert_clients_list(client_list):
     # Loop through every client in the list and write to db
@@ -136,6 +145,7 @@ def insert_clients_list(client_list):
         values = tuple([client[column] for column in client.keys()])
         db.execute("INSERT INTO public.client ($columns) VALUES $values")
 
+
 @db_session
 def insert_projects_list(project_list):
     # Loop through every project in the list and write to db
@@ -143,6 +153,7 @@ def insert_projects_list(project_list):
         columns = AsIs(','.join(project.keys()))
         values = tuple([project[column] for column in project.keys()])
         db.execute("INSERT INTO public.project ($columns) VALUES $values")
+
 
 @db_session
 def insert_people_list(people_list):
