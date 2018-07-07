@@ -4,7 +4,7 @@ It will greatly simplify the actions taken within the main.py file
 """
 
 # Imports
-from controllers.datapusher import DataActor
+from controllers.datapusher import PusherBot
 from controllers.datagrabber import Harvester, Forecaster
 from data_rocket_conf import config as conf
 
@@ -53,7 +53,9 @@ class Munger(object):
             # Fillers until goals are input
             person.update(weekly_goal=0)
             person.update(yearly_goal=0)
-
+        """
+        note to self - need to return the people dict with 'people' as a key instead of 'users'
+        """
 
         return people
 
