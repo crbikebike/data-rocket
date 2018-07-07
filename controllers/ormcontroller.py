@@ -21,7 +21,7 @@ All the classes below map directly to the tables and their fields
 class Person(db.Entity):
     id = PrimaryKey(int, auto=True)
     harvest_id = Optional(str)
-    forecast_id = Optional(str)
+    forecast_id = Optional(str, nullable=True)
     first_name = Optional(str)
     last_name = Optional(str)
     weekly_goal = Optional(Decimal)
@@ -62,7 +62,7 @@ class Time_Entry(db.Entity):
 class Project(db.Entity):
     id = PrimaryKey(int, auto=True)
     harvest_id = Optional(str)
-    forecast_id = Optional(str)
+    forecast_id = Optional(str, nullable=True)
     time_entries = Set(Time_Entry)
     name = Optional(str)
     code = Optional(float)
@@ -174,3 +174,12 @@ def insert_people_list(people_list):
         columns = AsIs(','.join(person.keys()))
         values = tuple([person[column] for column in person.keys()])
         db.execute("INSERT INTO public.person ($columns) VALUES $values")
+
+
+@db_session
+def insert_time_assignment_list(assignment_list):
+    # Loop through every time assignment in the list and write to db
+    for assn in assignment_list:
+        columns = AsIs(','.join(assn.keys()))
+        values = tuple([assn[column] for column in assn.keys()])
+        db.execute("INSERT INTO public.time_assignment ($columns) VALUES $values")

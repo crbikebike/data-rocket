@@ -6,7 +6,8 @@ It will greatly simplify the actions taken within the main.py file
 # Imports
 from controllers.datagrabber import Harvester, Forecaster
 from data_rocket_conf import config as conf
-from datetime import datetime
+from datetime import datetime, timedelta
+from numpy import is_busday
 
 # Vars
 # grab config vars to pass to our classes later
@@ -29,6 +30,7 @@ class Munger(object):
                             user_agent=user_agent, is_test=is_test)
         self.fore = Forecaster(forecast_account_id=forecast_account_id, user_agent=user_agent,
                                auth_token=auth_token, is_test=is_test)
+        self.date_string = '%Y-%m-%d'
 
     def __insert_harvest_id__(self, result_dict):
         # Insert Harvest ID, pop the old id key (Will be replaced by db identity key upon insert)
@@ -40,6 +42,15 @@ class Munger(object):
             print('No id column found')
 
         return result_dict
+
+    # This takes two dates and provides the dates between them, inclusive of start and end
+    def __make_date_list__(self, start, end):
+        date_string = self.date_string
+        start_date = datetime.strptime(start, date_string)
+        end_date = datetime.strptime(end, date_string)
+        dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+
+        return dates
 
     """
     The functions below modify data in ways needed to be useful for the BI tool.
@@ -57,7 +68,7 @@ class Munger(object):
             person.update(yearly_goal=0)
 
             # Update the Harvest ID
-            self.__insert_harvest_id__(people)
+            self.__insert_harvest_id__(person)
 
         return people
 
@@ -111,16 +122,36 @@ class Munger(object):
     # Munge the Forecast Assignments
     def munge_forecast_assignments(self,):
         assignments = self.fore.get_forecast_assignments()
-        date_string = '%Y-%m-%d'
+        date_string = self.date_string
 
-        # Forecast Assignments require to be calculated in hrs/d and number of days
-        # so they can be shown in weekly buckets
+        # Forecast Assignments require hrs/day to be calculated and have the exact dates drawn from a range given
 
-        for assignment in assignments:
-            start_date = datetime.strptime(assignment['start_date'], date_string)
-            end_date = datetime.strptime(assignment['end_date'], date_string)
-            assignment_length = (end_date - start_date).days + 1
-            allocation_hours = assignment['allocation'] / 3600
-            allocation_conv = assignment_length * allocation_hours
+        assn_list = []
+        for assn in assignments['assignments']:
+            errors = 0
+            id = assn.pop('id')
+            start_date = assn.pop('start_date')
+            end_date = assn.pop('end_date')
+            try:
+                allocation = assn.pop('allocation') / 3600
+            except Exception as e:
+                errors += 1
 
-            assignment.update(allocation=allocation_conv)
+
+            # Create the date list for the Forecast Assignment
+            date_list = self.__make_date_list__(start_date, end_date)
+
+            # For each day in the assignment, make an entry
+            for day in date_list:
+                if is_busday(day):
+                    split_assn = assn.copy()
+                    split_assn.update(parent_id=id)
+                    split_assn.update(assign_date=(day).strftime(date_string))
+                    split_assn.update(allocation=allocation)
+                    assn_list.append(split_assn)
+                else:
+                    pass
+
+        print("Total errors while loading Forecast Assignments: {}".format(errors))
+
+        return assn_list

@@ -16,7 +16,8 @@ Count rows being inserted - give status when, catch error and note where it left
 """
 
 ##  Classes
-# This class needs to be remade to take the clutter from the main.py file
+
+# This class handles collating and pushing clean data to the DB
 class PusherBot(object):
 
     def __init__(self, is_test=False):
@@ -39,10 +40,9 @@ class PusherBot(object):
         clients = self.mungy.munge_client_list()
         tasks = self.mungy.munge_task_list()
         projects = self.mungy.munge_project_list()
+        assignments = self.mungy.munge_forecast_assignments()
 
-
-
-        return [people, clients, projects, tasks, time_entries]
+        return [people, clients, projects, tasks, time_entries, assignments]
 
     # Push data out to the db
     def push_data(self, loaded_data):
@@ -77,3 +77,9 @@ class PusherBot(object):
                 print('Inserting Time Entry DB records')
                 time_entries = time_entries['time_entries']
                 orm.insert_time_entries_list(time_entries)
+
+            elif 'assignments' in data_list:
+                assignments = data_list
+                print('Inserting Forecast Assignment DB records')
+                assignments = assignments['assignments']
+                # NEED ORM METHOD TO INSERT ASSIGNMENTS

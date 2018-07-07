@@ -3,7 +3,7 @@
 # Imports
 import requests, json
 from collections import deque
-import datetime
+from datetime import datetime, timedelta
 
 # Hits Harvest endpoints and returns their data
 class Harvester(object):
@@ -112,19 +112,19 @@ class Harvester(object):
     """
     All Functions below starting with get_ correspond to a Harvest v2 API endpoint by the same name as the root_key var
     They utilize the above functions to get data and do light formatting to prepare for db entry
+    Each has a filter list that cuts the number of fields down to what is important for the data warehouse
     """
 
     def get_harvest_time_entries(self, from_date):
         root_key = 'time_entries'
-        # Name the keys you care about from the api
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
         time_entry_params = {}
 
         # If in test mode, only pull the most recent 2 days
         if self.is_test:
-            now = datetime.datetime.now()
-            timemachine = now - datetime.timedelta(days=2)
+            now = datetime.now()
+            timemachine = now - timedelta(days=2)
             time_entry_params.update({'from': timemachine})
         else:
             time_entry_params.update({'from': from_date})
@@ -139,7 +139,6 @@ class Harvester(object):
 
     def get_harvest_users(self):
         root_key = 'users'
-        # Name the keys you care about from the api
         filters = ['id', 'first_name', 'last_name', 'email', 'timezone', 'weekly_capacity', 'is_contractor',
                    'is_active', 'roles', 'avatar_url', 'created_at', 'updated_at']
 
@@ -149,7 +148,6 @@ class Harvester(object):
 
     def get_harvest_clients(self):
         root_key = 'clients'
-        # Name the keys you care about from the api
         filters = ['id', 'name', 'is_active', 'created_at', 'updated_at']
 
         clients_dict = self.__get_api_data__(root_key=root_key, filters=filters)
@@ -158,7 +156,6 @@ class Harvester(object):
 
     def get_harvest_projects(self):
         root_key = 'projects'
-        # Name the keys you care about from the api
         filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'budget', 'budget_is_monthly',
                    'created_at', 'updated_at', 'starts_on', 'ends_on', 'client']
 
@@ -168,7 +165,6 @@ class Harvester(object):
 
     def get_harvest_tasks(self):
         root_key = 'tasks'
-        # Name the keys you care about from the api
         filters = ['id', 'name']
 
         tasks_dict = self.__get_api_data__(root_key=root_key, filters=filters)
@@ -176,7 +172,7 @@ class Harvester(object):
         return tasks_dict
 
 
-# Grabs Forecast data Not complete at the moment
+# Grabs Forecast data - Note that the Forecast API is not officially supported
 class Forecaster(object):
 
     def __init__(self, forecast_account_id, user_agent, auth_token, is_test=False):
@@ -185,14 +181,17 @@ class Forecaster(object):
         self.forecast_headers.update(Authorization=auth_token)
         self.forecast_headers.update({'Forecast-Account-ID': forecast_account_id})
         self.forecast_headers.update({'User-Agent': user_agent})
+        self.forecast_params = {}
 
-    def __get_api_data__(self, api_url):
+    def __get_api_data__(self, api_url, extra_params={}):
         full_url = self.forecast_base_url + api_url
         headers = self.forecast_headers
+        params = self.forecast_params
+        params.update(extra_params)
 
-        # Grab result from Forecast API - Note this is not a supported API
+        # Hits the Forecast endpoint specified by the api_url param
         try:
-            r = requests.get(url=full_url, headers=headers)
+            r = requests.get(url=full_url, headers=headers, params=params)
             api_json_result = json.loads(r.text)
         except Exception as e:
             print('Attempt for Forecast {url} failed because {e}'.format(url=api_url, e=e))
@@ -211,11 +210,20 @@ class Forecaster(object):
 
         return results_dict
 
+    def __get_forecast_start_date__(self):
+        now = datetime.now()
+        time_machine = now - timedelta(days=180)
+        first_of_month = time_machine.strftime('%Y-%m-01')
+
+        return first_of_month
+
     """
-    The below fuctions pull data from the unsupported Forecast API
+    The below fuctions pull data from the Forecast API
+    There is also a set of filters for each endpoint to limit fields being sent downstream
     """
 
     def get_forecast_projects(self):
+        print('Getting Forecast Projects')
         api_url = 'projects'
         filters = ['id','harvest_id']
         projects_json_result = self.__get_api_data__(api_url)
@@ -227,6 +235,7 @@ class Forecaster(object):
         return projects_json_result
 
     def get_forecast_people(self):
+        print('Getting Forecast People')
         api_url = 'people'
         filters = ['id','forecast_id']
         people_json_result = self.__get_api_data__(api_url)
@@ -238,12 +247,14 @@ class Forecaster(object):
         return people_json_result
 
     def get_forecast_assignments(self):
+        print('Getting Forecast Assignments')
         api_url = 'assignments'
+        extra_params = {'start_date': self.__get_forecast_start_date__()}
         filters = ['id','start_date','end_date','allocation','updated_at','project_id','person_id']
-        assignment_json_result = self.__get_api_data__(api_url)
+        assignment_json_result = self.__get_api_data__(api_url, extra_params=extra_params)
 
         # Filter results to the fields we care about
-        for assignment in assignment_json_result:
-            assignment = self.__filter_results__(results_dict=assignment, filter_list=filters)
+        for assn in assignment_json_result['assignments']:
+            assn = self.__filter_results__(results_dict=assn, filter_list=filters)
 
         return assignment_json_result
