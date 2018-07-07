@@ -14,16 +14,19 @@ from psycopg2.extensions import AsIs
 # Define the required Database object for PonyORM
 db = Database()
 
+"""
+All the classes below map directly to the tables and their fields
+"""
 
-# Create User ORM Object
 class Person(db.Entity):
-    id = PrimaryKey(int, auto=False)
+    id = PrimaryKey(int, auto=True)
+    harvest_id = Optional(int)
+    forecast_id = Optional(int)
     first_name = Optional(str)
     last_name = Optional(str)
-    # forecast_id = Optional(int)
     weekly_goal = Optional(Decimal)
     yearly_goal = Optional(int)
-    time_entries = Set('TimeEntry')
+    time_entries = Set('Time_Entry')
     email = Optional(str)
     timezone = Optional(str)
     weekly_capacity = Optional(Decimal)
@@ -33,11 +36,11 @@ class Person(db.Entity):
     avatar_url = Optional(str)
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
+    assignments = Set('Time_Assignment')
 
 
-# Create Harvest Time Entry ORM Object
-class TimeEntry(db.Entity):
-    id = PrimaryKey(int, auto=False)
+class Time_Entry(db.Entity):
+    id = PrimaryKey(int, auto=True)
     spent_date = Optional(date)
     hours = Optional(Decimal)
     billable = Optional(bool)
@@ -47,22 +50,22 @@ class TimeEntry(db.Entity):
     entry_amount = Optional(Decimal)
     user_id = Required(Person)
     user_name = Optional(str)
-    client_id = Required('Client')
-    client_name = Optional(str)
     project_id = Required('Project')
     project_name = Optional(str)
     project_code = Optional(str)
+    client_id = Required('Client')
+    client_name = Optional(str)
     task_id = Required('Task')
     task_name = Optional(str)
 
 
-# Create Project ORM Object
 class Project(db.Entity):
-    id = PrimaryKey(int, auto=False)
-    time_entries = Set(TimeEntry)
+    id = PrimaryKey(int, auto=True)
+    harvest_id = Optional(str)
+    forecast_id = Optional(int)
+    time_entries = Set(Time_Entry)
     name = Optional(str)
-    code = Optional(str)
-    # forecast_id = Optional(int)
+    code = Optional(float)
     client_id = Required('Client')
     client_name = Optional(str)
     is_active = Optional(bool)
@@ -73,25 +76,35 @@ class Project(db.Entity):
     updated_at = Optional(datetime)
     starts_on = Optional(date)
     ends_on = Optional(date)
+    assignments = Set('Time_Assignment')
 
 
-# Create Client ORM Object
 class Client(db.Entity):
-    id = PrimaryKey(int, auto=False)
+    id = PrimaryKey(int, auto=True)
+    harvest_id = Optional(str)
+    forecast_id = Optional(int)
     name = Optional(str)
-    is_active = Optional(bool)
-    # forecast_id = Optional(int)
-    time_entries = Set(TimeEntry)
+    is_active = Optional(str)
+    time_entries = Set(Time_Entry)
     projects = Set(Project)
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
 
 
-# Create Task ORM Object
 class Task(db.Entity):
-    id = PrimaryKey(int, auto=False)
+    id = PrimaryKey(int, auto=True)
     name = Optional(str)
-    time_entries = Set(TimeEntry)
+    time_entries = Set(Time_Entry)
+
+
+class Time_Assignment(db.Entity):
+    id = PrimaryKey(int, auto=True)
+    person_id = Required(Person)
+    start_date = Optional(date)
+    end_date = Optional(date)
+    allocation = Optional(int)
+    updated_at = Optional(datetime)
+    project_id = Required(Project)
 
 
 # Create log table
@@ -113,11 +126,11 @@ set_sql_debug(False)
 # Create ORM mapping, tables if necessary
 db.generate_mapping(create_tables=True)
 
+
 """
 The below insert functions each insert data for their namesake.  They assume being passed a list of dictionaries with
 column names and values that correspond to the ORM classes above.
 """
-
 
 @db_session
 def insert_time_entries_list(time_entry_list):

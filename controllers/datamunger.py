@@ -35,6 +35,9 @@ class Munger(object):
                 entry.update(entry_amount=0)
             else:
                 entry.update(entry_amount=(entry['hours'] * entry['billable_rate']))
+            # Find the harvest_id in the people table and then change to the identiy key from
+
+
 
         return entries
 
