@@ -20,8 +20,8 @@ All the classes below map directly to the tables and their fields
 
 class Person(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(int)
-    forecast_id = Optional(int)
+    harvest_id = Optional(str)
+    forecast_id = Optional(str)
     first_name = Optional(str)
     last_name = Optional(str)
     weekly_goal = Optional(Decimal)
@@ -62,7 +62,7 @@ class Time_Entry(db.Entity):
 class Project(db.Entity):
     id = PrimaryKey(int, auto=True)
     harvest_id = Optional(str)
-    forecast_id = Optional(int)
+    forecast_id = Optional(str)
     time_entries = Set(Time_Entry)
     name = Optional(str)
     code = Optional(float)
@@ -82,7 +82,6 @@ class Project(db.Entity):
 class Client(db.Entity):
     id = PrimaryKey(int, auto=True)
     harvest_id = Optional(str)
-    forecast_id = Optional(int)
     name = Optional(str)
     is_active = Optional(str)
     time_entries = Set(Time_Entry)
@@ -99,10 +98,10 @@ class Task(db.Entity):
 
 class Time_Assignment(db.Entity):
     id = PrimaryKey(int, auto=True)
+    parent_id = Optional(int)
     person_id = Required(Person)
-    start_date = Optional(date)
-    end_date = Optional(date)
-    allocation = Optional(int)
+    assign_date = Optional(date)
+    allocation = Optional(Decimal)
     updated_at = Optional(datetime)
     project_id = Required(Project)
 
@@ -138,7 +137,7 @@ def insert_time_entries_list(time_entry_list):
     for entry in time_entry_list:
         columns = AsIs(','.join(entry.keys()))
         values = tuple([entry[column] for column in entry.keys()])
-        db.execute("INSERT INTO public.timeentry ($columns) VALUES $values")
+        db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
 
 
 @db_session

@@ -179,9 +179,71 @@ class Harvester(object):
 # Grabs Forecast data Not complete at the moment
 class Forecaster(object):
 
-    def __init__(self, forecast_account_id, user_agent, auth_token):
+    def __init__(self, forecast_account_id, user_agent, auth_token, is_test=False):
         self.forecast_base_url = 'https://api.forecastapp.com/'
         self.forecast_headers = {}
         self.forecast_headers.update(Authorization=auth_token)
         self.forecast_headers.update({'Forecast-Account-ID': forecast_account_id})
         self.forecast_headers.update({'User-Agent': user_agent})
+
+    def __get_api_data__(self, api_url):
+        full_url = self.forecast_base_url + api_url
+        headers = self.forecast_headers
+
+        # Grab result from Forecast API - Note this is not a supported API
+        try:
+            r = requests.get(url=full_url, headers=headers)
+            api_json_result = json.loads(r.text)
+        except Exception as e:
+            print('Attempt for Forecast {url} failed because {e}'.format(url=api_url, e=e))
+
+        return api_json_result
+
+    # Filter results from larger dictionary by subtracting a set of its keys against a given list
+    def __filter_results__(self, results_dict, filter_list):
+        result_keys = set(results_dict.keys())
+        filter_set = set(filter_list)
+
+        # Compare the two sets, pop all keys that are not in the filter set
+        pop_list = list(result_keys - filter_set)
+        for pop_key in pop_list:
+            results_dict.pop(pop_key)
+
+        return results_dict
+
+    """
+    The below fuctions pull data from the unsupported Forecast API
+    """
+
+    def get_forecast_projects(self):
+        api_url = 'projects'
+        filters = ['id','harvest_id']
+        projects_json_result = self.__get_api_data__(api_url)
+
+        # Filter the results to only the fields we care about
+        for project in projects_json_result:
+            project = self.__filter_results__(results_dict=project, filter_list=filters)
+
+        return projects_json_result
+
+    def get_forecast_people(self):
+        api_url = 'people'
+        filters = ['id','forecast_id']
+        people_json_result = self.__get_api_data__(api_url)
+
+        # Filter the results to only the fields we care about
+        for person in people_json_result:
+            person = self.__filter_results__(results_dict=person, filter_list=filters)
+
+        return people_json_result
+
+    def get_forecast_assignments(self):
+        api_url = 'assignments'
+        filters = ['id','start_date','end_date','allocation','updated_at','project_id','person_id']
+        assignment_json_result = self.__get_api_data__(api_url)
+
+        # Filter results to the fields we care about
+        for assignment in assignment_json_result:
+            assignment = self.__filter_results__(results_dict=assignment, filter_list=filters)
+
+        return assignment_json_result
