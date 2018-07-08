@@ -20,8 +20,8 @@ All the classes below map directly to the tables and their fields
 
 class Person(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(str)
-    forecast_id = Optional(str, nullable=True)
+    harvest_id = Optional(int, unique=True)
+    forecast_id = Optional(int, unique=True, nullable=True)
     first_name = Optional(str)
     last_name = Optional(str)
     weekly_goal = Optional(Decimal)
@@ -61,8 +61,8 @@ class Time_Entry(db.Entity):
 
 class Project(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(str)
-    forecast_id = Optional(str, nullable=True)
+    harvest_id = Optional(int, unique=True)
+    forecast_id = Optional(int, unique=True, nullable=True)
     time_entries = Set(Time_Entry)
     name = Optional(str)
     code = Optional(float)
@@ -81,7 +81,7 @@ class Project(db.Entity):
 
 class Client(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(str)
+    harvest_id = Optional(int, unique=True)
     name = Optional(str)
     is_active = Optional(str)
     time_entries = Set(Time_Entry)
@@ -134,52 +134,98 @@ column names and values that correspond to the ORM classes above.
 @db_session
 def insert_time_entries_list(time_entry_list):
     # Loop through every entry in the list and write to db
+    record_count = len(time_entry_list)
+    error_count = 0
     for entry in time_entry_list:
         columns = AsIs(','.join(entry.keys()))
         values = tuple([entry[column] for column in entry.keys()])
-        db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
-
+        try:
+            db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting time_entries: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
 def insert_tasks_list(tasks_list):
     # Loop through every task in the list and write to db
+    record_count = len(tasks_list)
+    error_count = 0
     for task in tasks_list:
         columns = AsIs(','.join(task.keys()))
         values = tuple([task[column] for column in task.keys()])
-        db.execute("INSERT INTO public.task ($columns) VALUES $values")
-
+        try:
+            db.execute("INSERT INTO public.task ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting tasks: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
 def insert_clients_list(client_list):
     # Loop through every client in the list and write to db
+    record_count = len(client_list)
+    error_count = 0
     for client in client_list:
         columns = AsIs(','.join(client.keys()))
         values = tuple([client[column] for column in client.keys()])
-        db.execute("INSERT INTO public.client ($columns) VALUES $values")
-
+        try:
+            db.execute("INSERT INTO public.client ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting clients: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
 def insert_projects_list(project_list):
     # Loop through every project in the list and write to db
+    record_count = len(project_list)
+    error_count = 0
     for project in project_list:
         columns = AsIs(','.join(project.keys()))
         values = tuple([project[column] for column in project.keys()])
-        db.execute("INSERT INTO public.project ($columns) VALUES $values")
-
+        try:
+            db.execute("INSERT INTO public.project ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting projects: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
 def insert_people_list(people_list):
     # Loop through every person in the list and write to db
+    record_count = len(people_list)
+    error_count = 0
     for person in people_list:
         columns = AsIs(','.join(person.keys()))
         values = tuple([person[column] for column in person.keys()])
-        db.execute("INSERT INTO public.person ($columns) VALUES $values")
-
+        try:
+            db.execute("INSERT INTO public.person ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting people: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
 def insert_time_assignment_list(assignment_list):
     # Loop through every time assignment in the list and write to db
+    record_count = len(assignment_list)
+    error_count = 0
     for assn in assignment_list:
         columns = AsIs(','.join(assn.keys()))
         values = tuple([assn[column] for column in assn.keys()])
-        db.execute("INSERT INTO public.time_assignment ($columns) VALUES $values")
+        try:
+            db.execute("INSERT INTO public.time_assignment ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting assignments: {err} ({p})".format(err=error_count, p=p))
+
+"""
+Utility Functions
+"""
+def calc_error_percent(record_count, error_count):
+    percent = (error_count / record_count) * 100
+    pretty_percent = str(percent) + '%'
+
+    return pretty_percent

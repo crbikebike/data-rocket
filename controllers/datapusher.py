@@ -1,7 +1,7 @@
 ### Purpose of file: This is the controller that will perform file data gathering and push to the db ###
 
 ## Imports
-import controllers.ormcontroller as orm
+from controllers.ormcontroller import *
 from controllers.datamunger import Munger
 
 """
@@ -28,58 +28,44 @@ class PusherBot(object):
             self.mungy = Munger()
 
     # Call appropriate functions to get munged data, return tuple of data dicts
-    def load_data(self):
+    def load_data(self, people=False, clients=False, tasks=False, projects=False, assignments=False,
+                  time_entries=False):
 
         """
-        Note to self - need to add if statement for full load or differential
+        For each flag, check if enabled and then process if true
         """
+        if people:
+            people = self.mungy.munge_person_list()
+            print('Inserting People DB records')
+            people_list = people['people']
+            insert_people_list(people_list)
 
-        # Place Munged Harvest entries into a dictionary
-        time_entries = self.mungy.munge_harvest_time_entries()
-        people = self.mungy.munge_person_list()
-        clients = self.mungy.munge_client_list()
-        tasks = self.mungy.munge_task_list()
-        projects = self.mungy.munge_project_list()
-        assignments = self.mungy.munge_forecast_assignments()
+        if clients:
+            clients = self.mungy.munge_client_list()
+            print('Inserting Client DB records')
+            client_list = clients['clients']
+            insert_clients_list(client_list)
 
-        return [people, clients, projects, tasks, time_entries, assignments]
+        if tasks:
+            tasks = self.mungy.munge_task_list()
+            print('Inserting Task DB records')
+            tasks_list = tasks['tasks']
+            insert_tasks_list(tasks_list)
 
-    # Push data out to the db
-    def push_data(self, loaded_data):
-        # Loop through our loaded entry and insert what we get
-        for data_list in loaded_data:
-            if 'people' in data_list:
-                people = data_list
-                print('Inserting People DB records')
-                people_list = people['people']
-                orm.insert_people_list(people_list)
+        if projects:
+            projects = self.mungy.munge_project_list()
+            print('Inserting Project DB records')
+            project_list = projects['projects']
+            insert_projects_list(project_list)
 
-            elif 'clients' in data_list:
-                clients = data_list
-                print('Inserting Client DB records')
-                client_list = clients['clients']
-                orm.insert_clients_list(client_list)
+        if assignments:
+            assignments = self.mungy.munge_forecast_assignments()
+            print('Inserting Forecast Assignment DB records')
+            assignments = assignments['assignments']
+            insert_time_assignment_list(assignments)
 
-            elif 'projects' in data_list:
-                projects = data_list
-                print('Inserting Project DB records')
-                project_list = projects['projects']
-                orm.insert_projects_list(project_list)
-
-            elif 'tasks' in data_list:
-                tasks = data_list
-                print('Inserting Task DB records')
-                tasks_list = tasks['tasks']
-                orm.insert_tasks_list(tasks_list)
-
-            elif 'time_entries' in data_list:
-                time_entries = data_list
-                print('Inserting Time Entry DB records')
-                time_entries = time_entries['time_entries']
-                orm.insert_time_entries_list(time_entries)
-
-            elif 'assignments' in data_list:
-                assignments = data_list
-                print('Inserting Forecast Assignment DB records')
-                assignments = assignments['assignments']
-                # NEED ORM METHOD TO INSERT ASSIGNMENTS
+        if time_entries:
+            time_entries = self.mungy.munge_harvest_time_entries()
+            print('Inserting Time Entry DB records')
+            time_entries = time_entries['time_entries']
+            insert_time_entries_list(time_entries)

@@ -52,11 +52,24 @@ class Munger(object):
 
         return dates
 
+    # Searches two dictionaries and inserts the forecast id for the entity - used for People and Projects
+    def __insert_forecast_id__(self, harvest_list, forecast_list):
+
+        for fperson in forecast_list:
+            for hperson in harvest_list:
+                if fperson['harvest_id'] == hperson['harvest_id']:
+                    hperson.update(forecast_id=fperson['id'])
+                else:
+                    pass
+
     """
     The functions below modify data in ways needed to be useful for the BI tool.
     """
 
     def munge_person_list(self):
+        """
+        This will pull the Harvest and Forecast user/people lists and combine them into one entry
+        """
         people = self.harv.get_harvest_users()
         people['people'] = people.pop('users')
 
@@ -69,6 +82,11 @@ class Munger(object):
 
             # Update the Harvest ID
             self.__insert_harvest_id__(person)
+
+        forecast_people = self.fore.get_forecast_people()
+
+        # Insert the Forecast ID now that we have both lists
+        self.__insert_forecast_id__(harvest_list=people['people'], forecast_list=forecast_people['people'])
 
         return people
 
@@ -96,6 +114,11 @@ class Munger(object):
 
             # Update the Harvest ID column
             self.__insert_harvest_id__(project)
+
+        forecast_projects = self.fore.get_forecast_projects()
+
+        # Insert the Forecast Project ID now that we have both lists
+        self.__insert_forecast_id__(harvest_list=projects['projects'], forecast_list=forecast_projects['projects'])
 
         return projects
 

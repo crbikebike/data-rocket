@@ -12,8 +12,5 @@ if __name__ == '__main__':
     # Make the PusherBot
     pb = PusherBot()
 
-    # Load data into a list of dicts
-    loaded_data = pb.load_data()
-
-    # Push that data to the db
-    pb.push_data(loaded_data=loaded_data)
+    # Load all data flagged as true and push to db
+    pb.load_data(people=True, clients=True, tasks=True)

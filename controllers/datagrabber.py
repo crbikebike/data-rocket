@@ -229,7 +229,7 @@ class Forecaster(object):
         projects_json_result = self.__get_api_data__(api_url)
 
         # Filter the results to only the fields we care about
-        for project in projects_json_result:
+        for project in projects_json_result['projects']:
             project = self.__filter_results__(results_dict=project, filter_list=filters)
 
         return projects_json_result
@@ -237,12 +237,13 @@ class Forecaster(object):
     def get_forecast_people(self):
         print('Getting Forecast People')
         api_url = 'people'
-        filters = ['id','forecast_id']
+        filters = ['id','harvest_user_id']
         people_json_result = self.__get_api_data__(api_url)
 
         # Filter the results to only the fields we care about
-        for person in people_json_result:
+        for person in people_json_result['people']:
             person = self.__filter_results__(results_dict=person, filter_list=filters)
+            person.update(harvest_id = person.pop('harvest_user_id'))
 
         return people_json_result
 
