@@ -5,6 +5,7 @@ It will greatly simplify the actions taken within the main.py file
 
 # Imports
 from controllers.datagrabber import Harvester, Forecaster
+from controllers.ormcontroller import *
 from data_rocket_conf import config as conf
 from datetime import datetime, timedelta
 from numpy import is_busday

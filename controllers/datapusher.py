@@ -11,8 +11,6 @@ Find existing rows, update if needed - probably only look back 30 days since the
 
 Use the Harvest Param to only pull since last update, only pull things after that entry 
     - Until that, will just drop the table and re-insert everything
-
-Count rows being inserted - give status when, catch error and note where it left off
 """
 
 ##  Classes

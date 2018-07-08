@@ -127,6 +127,7 @@ db.generate_mapping(create_tables=True)
 
 
 """
+CREATE:
 The below insert functions each insert data for their namesake.  They assume being passed a list of dictionaries with
 column names and values that correspond to the ORM classes above.
 """
@@ -220,6 +221,23 @@ def insert_time_assignment_list(assignment_list):
             error_count +=1
     p = calc_error_percent(record_count, error_count)
     print("Errors while inserting assignments: {err} ({p})".format(err=error_count, p=p))
+
+"""
+READ:
+The following fuctions fetch info from the db
+"""
+def get_person_by_harvest_id(harvest_id):
+    person = Person.get(harvest_id=harvest_id)
+    return person
+
+def get_project_by_harvest_id(harvest_id):
+    project = Project.get(harvest_id=harvest_id)
+    return project
+
+def get_client_by_harvest_id(harvest_id):
+    client = Client.get(harvest_id=harvest_id)
+    return client
+
 
 """
 Utility Functions
