@@ -59,7 +59,6 @@ class PusherBot(object):
         if assignments:
             assignments = self.mungy.munge_forecast_assignments()
             print('Inserting Forecast Assignment DB records')
-            assignments = assignments['assignments']
             insert_time_assignment_list(assignments)
 
         if time_entries:
