@@ -141,19 +141,17 @@ class Harvester(object):
     Each has a filter list that cuts the number of fields down to what is important for the data warehouse
     """
 
-    def get_harvest_time_entries(self):
+    def get_harvest_time_entries(self, updated_since=''):
         root_key = 'time_entries'
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
 
         # Setup the endpoint params
         time_entry_params = {}
-        if self.is_test: # If in test mode, only pull the most recent 2 days
-            now = datetime.now()
-            timemachine = now - timedelta(days=2)
-            time_entry_params.update({'from': timemachine})
-        else:
-            time_entry_params.update({'from': from_date})
+        if updated_since:
+            time_entry_params.update(updated_since=updated_since) # Only pull entires updated since this date
+        if from_date:
+            time_entry_params.update({'from': from_date}) # If above param isn't present, will pull from this date
         time_entry_params.update({'is_running': 'false'}) # Prevent pulling running timers
 
         # Perform data pull

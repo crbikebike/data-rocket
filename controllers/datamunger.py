@@ -113,7 +113,7 @@ class Munger(object):
             self.__match_forecast_id__(person, forecast_people['people'])\
             # Populate the full_name field
             try: #protect against bad key error if someone didn't have fields filled in on Harvest
-                person.update(full_name=str(person['first_name'] + person['last_name']))
+                person.update(full_name=str(person['first_name'] + ' ' + person['last_name']))
             except Exception as e:
                 print("""Couldn't make full name for {}.  Make sure that person is setup in Harvest
                       correctly""".format(person),e)

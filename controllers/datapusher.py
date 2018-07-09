@@ -29,6 +29,9 @@ class PusherBot(object):
     def load_data(self, people=False, clients=False, tasks=False, projects=False, assignments=False,
                   time_entries=False):
 
+        # No graceful time diff right now, drop all data
+        db.drop_all_tables(with_all_data=True)
+        db.create_tables()
         """
         For each flag, check if enabled and then process if true
         """
