@@ -264,6 +264,22 @@ class Munger(object):
 
         return entries
 
+    def munge_legacy_harvest_entries(self, harvest_entry_list):
+        """
+        This allows for filling legacy Entries table while reports are migrated to new format
+        Update the entry list of dicts with the legacy fields so the data pusher can send to legacy table
+        """
+        legacy_entry_list = harvest_entry_list.copy()
+
+        for entry in legacy_entry_list:
+            entry.update(entry_id=entry.pop('id'))
+            entry.update(user_id=entry.pop('person_id'))
+            entry.update(user_name=entry.pop('person_name'))
+            entry.update(harvest_project_id=entry.pop('project_id'))
+            entry.update(harvest_project_name=entry.pop('project_name'))
+            entry.update(harvest_project_code=entry.pop('project_code'))
+        return legacy_entry_list
+
     def munge_forecast_assignments(self):
         """
         Forecast API is very different than Harvest, so requires quite a bit of munging.

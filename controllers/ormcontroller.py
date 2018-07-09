@@ -108,6 +108,27 @@ class Time_Assignment(db.Entity):
     project_id = Required(Project)
 
 
+class Harvest_Entries(db.Entity):
+    """Legacy Entry Table"""
+    entry_id = PrimaryKey(int)
+    hours = Optional(Decimal)
+    spent_date = Optional(datetime)
+    billable = Optional(bool)
+    billable_rate = Optional(Decimal)
+    created_at = Optional(datetime)
+    updated_at = Optional(datetime)
+    entry_amount = Optional(Decimal)
+    user_id = Optional(int)
+    user_name = Optional(str, nullable=True)
+    harvest_project_id = Optional(int)
+    harvest_project_name = Optional(str, nullable=True)
+    harvest_project_code = Optional(str, nullable=True)
+    client_id = Optional(int)
+    client_name = Optional(str, nullable=True)
+    task_id = Optional(int)
+    task_name = Optional(str, nullable=True)
+
+
 # Create log table
 class DataRocketLog(db.Entity):
     id = PrimaryKey(int, auto=True)
@@ -145,6 +166,22 @@ def insert_time_entries_list(time_entry_list):
         values = tuple([entry[column] for column in entry.keys()])
         try:
             db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
+        except Exception as e:
+            error_count +=1
+    p = calc_error_percent(record_count, error_count)
+    print("Errors while inserting time_entries: {err} ({p})".format(err=error_count, p=p))
+
+
+@db_session
+def insert_legacy_time_entries_list(legacy_time_entry_list):
+    # Loop through every entry in the list and write to db
+    record_count = len(legacy_time_entry_list)
+    error_count = 0
+    for entry in legacy_time_entry_list:
+        columns = AsIs(','.join(entry.keys()))
+        values = tuple([entry[column] for column in entry.keys()])
+        try:
+            db.execute("INSERT INTO public.harvest_entries ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
     p = calc_error_percent(record_count, error_count)
