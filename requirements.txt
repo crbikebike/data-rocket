@@ -4,3 +4,5 @@ flask
 psycopg2
 datetime
 requests
+pony
+numpy
