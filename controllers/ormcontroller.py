@@ -20,20 +20,21 @@ All the classes below map directly to the tables and their fields
 
 class Person(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(int, unique=True)
+    harvest_id = Optional(int, unique=True, nullable=True)
     forecast_id = Optional(int, unique=True, nullable=True)
     first_name = Optional(str)
     last_name = Optional(str)
+    full_name = Optional(str, nullable=True)
     weekly_goal = Optional(Decimal)
     yearly_goal = Optional(int)
     time_entries = Set('Time_Entry')
-    email = Optional(str)
-    timezone = Optional(str)
+    email = Optional(str, nullable=True)
+    timezone = Optional(str, nullable=True)
     weekly_capacity = Optional(Decimal)
     is_contractor = Optional(bool)
     is_active = Optional(bool)
     roles = Optional(Json)
-    avatar_url = Optional(str)
+    avatar_url = Optional(str, nullable=True)
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
     assignments = Set('Time_Assignment')
@@ -61,11 +62,11 @@ class Time_Entry(db.Entity):
 
 class Project(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(int, unique=True)
+    harvest_id = Optional(int, unique=True, nullable=True)
     forecast_id = Optional(int, unique=True, nullable=True)
     time_entries = Set(Time_Entry)
     name = Optional(str)
-    code = Optional(float)
+    code = Optional(str, nullable=True)
     client_id = Required('Client')
     client_name = Optional(str)
     is_active = Optional(bool)
@@ -81,9 +82,10 @@ class Project(db.Entity):
 
 class Client(db.Entity):
     id = PrimaryKey(int, auto=True)
-    harvest_id = Optional(int, unique=True)
+    harvest_id = Optional(int, unique=True, nullable=True)
+    forecast_id = Optional(int, unique=True, nullable=True)
     name = Optional(str)
-    is_active = Optional(str)
+    is_active = Optional(bool)
     time_entries = Set(Time_Entry)
     projects = Set(Project)
     created_at = Optional(datetime)
@@ -282,6 +284,10 @@ def get_client_by_harvest_id(harvest_id):
     client = Client.get(harvest_id=harvest_id)
     return client
 
+@db_session
+def get_client_by_forecast_id(forecast_id):
+    client = Client.get(forecast_id=forecast_id)
+    return client
 
 """
 Utility Functions

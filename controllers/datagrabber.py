@@ -7,6 +7,7 @@ Currently supported: Harvest, Forecast
 import requests, json
 from collections import deque
 from datetime import datetime, timedelta
+import calendar
 from data_rocket_conf import config as conf
 
 
@@ -204,6 +205,7 @@ class Forecaster(object):
         self.forecast_headers.update({'Forecast-Account-ID': forecast_account_id})
         self.forecast_headers.update({'User-Agent': user_agent})
         self.forecast_params = {}
+        self.date_string = '%Y-%m-%d'
 
     """
     Utility Methods
@@ -242,15 +244,21 @@ class Forecaster(object):
 
         return results_dict
 
-    def __get_forecast_start_date__(self):
+    def __get_forecast_dates__(self):
         """
-        Gets the first date of the previous month - This is used to see how much Forecast history to pull
+        Gets the first date of the previous month and last day of 6 months from now
+        This is used to see how much Forecast history and future to pull
         """
         now = datetime.now()
+        # Get the first date of the past month
         time_machine = now - timedelta(days=30)
-        first_of_month = time_machine.strftime('%Y-%m-01')
+        look_behind = time_machine.strftime('%Y-%m-01')
+        # Get the last date of 6-ish months from now
+        future_machine = now + timedelta(days=150)
+        eom = calendar.monthrange(future_machine.year, future_machine.month)[1]
+        look_ahead = future_machine.strftime('%Y-%m-{d}'.format(d=eom))
 
-        return first_of_month
+        return look_behind, look_ahead
 
     """
     The below fuctions pull data from the Forecast API
@@ -260,30 +268,34 @@ class Forecaster(object):
     def get_forecast_projects(self):
         print('Getting Forecast Projects')
         api_url = 'projects'
-        filters = ['id','harvest_id']
+        filters = ['id', 'name', 'code', 'start_date', 'end_date', 'harvest_id', 'client_id',
+                   'updated_at']
         projects_json_result = self.__get_api_data__(api_url)
 
         for project in projects_json_result['projects']:
             # Filter the results to only the fields we care about
             project = self.__filter_results__(results_dict=project, filter_list=filters)
+            project.update(starts_on=project.pop('start_date')) # Update to match the Harvest Field Name
+            project.update(ends_on=project.pop('end_date'))
         return projects_json_result
 
     def get_forecast_people(self):
         print('Getting Forecast People')
         api_url = 'people'
-        filters = ['id','harvest_user_id']
+        filters = ['id','harvest_user_id','first_name', 'last_name', 'email', 'updated_at']
         people_json_result = self.__get_api_data__(api_url)
 
         for person in people_json_result['people']:
             # Filter the results to only the fields we care about
             person = self.__filter_results__(results_dict=person, filter_list=filters)
-            person.update(harvest_id = person.pop('harvest_user_id'))
+            person.update(harvest_id = person.pop('harvest_user_id')) # Update to match the Harvest Field Name
         return people_json_result
 
     def get_forecast_assignments(self):
         print('Getting Forecast Assignments')
         api_url = 'assignments'
-        extra_params = {'start_date': self.__get_forecast_start_date__()}
+        start_date, end_date = self.__get_forecast_dates__()
+        extra_params = {'start_date': start_date, 'end_date': end_date}
         filters = ['id','start_date','end_date','allocation','updated_at','project_id','person_id']
         assignment_json_result = self.__get_api_data__(api_url, extra_params=extra_params)
 
@@ -291,3 +303,15 @@ class Forecaster(object):
             # Filter results to the fields we care about
             assn = self.__filter_results__(results_dict=assn, filter_list=filters)
         return assignment_json_result
+
+    def get_forecast_clients(self):
+        print('Getting Forecast Clients')
+        api_url = 'clients'
+        filters = ['id', 'name', 'harvest_id', 'updated_at']
+        client_json_result = self.__get_api_data__(api_url)
+
+        for client in client_json_result['clients']:
+            # Filter the results to only the fields we care about
+            client = self.__filter_results__(results_dict=client, filter_list=filters)
+
+        return client_json_result

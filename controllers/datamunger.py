@@ -46,14 +46,37 @@ class Munger(object):
 
         return dates
 
-    def __insert_forecast_id__(self, harvest_list, forecast_list):
-        # Searches two dictionaries and inserts the forecast id for the entity
-        for fperson in forecast_list:
-            for hperson in harvest_list:
-                if fperson['harvest_id'] == hperson['harvest_id']:
-                    hperson.update(forecast_id=fperson['id'])
-                else:
-                    pass
+    def __find_orphan_forecast_ids__(self, harvest_list, forecast_list):
+        # Searches two lists and finds which set of id's are missing
+        harv_f_ids = []
+        fore_ids = []
+        for f_obj in forecast_list: # make a list of id's from the forecast list
+            fore_ids.append(f_obj['id'])
+        for h_obj in harvest_list: # make a list of id's from the harvest list
+            if 'forecast_id' in h_obj:
+                harv_f_ids.append(h_obj['forecast_id'])
+
+        # Convert each list into a set, subtract them, convert back into list
+        orphan_id_list = list(set(fore_ids) - set(harv_f_ids))
+        orphan_list = []
+        for o in orphan_id_list: # Loop through and find the dicts that match our orphans, return to method
+            for f_obj in forecast_list:
+                if f_obj['id'] == o:
+                    orphan_list.append(f_obj)
+        return orphan_list
+
+    def __match_forecast_id__(self, harvest_obj, forecast_list):
+        """
+        Takes a single harvest object (Like a Project or Person dict) and checks if a corresponding value exists in a
+        list of Forecast Objects
+        :param harvest_obj: Dictionary with Harvest API Results
+        :param forecast_list: List of Dictionaries with Forecast Results
+        """
+        for f_obj in (forecast_list):
+            if f_obj['harvest_id'] == harvest_obj['harvest_id']:
+                harvest_obj.update(forecast_id=f_obj['id'])
+            else:
+                pass
 
     def __refresh_memdb__(self, project=False, person=False, client=False):
         # Refresh tables for the memdb based on flags passed
@@ -75,53 +98,81 @@ class Munger(object):
         """
         This will pull the Harvest and Forecast user/people lists and combine them into one entry
         """
-        people = self.harv.get_harvest_users()
-        people['people'] = people.pop('users')
-
+        harvest_people = self.harv.get_harvest_users()
+        harvest_people['people'] = harvest_people.pop('users')
+        forecast_people = self.fore.get_forecast_people()
         # Loop through each person and update fields as needed
 
-        for person in people['people']:
+        for person in harvest_people['people']:
             # Filler goals until goals are input
             person.update(weekly_goal=0)
             person.update(yearly_goal=0)
-
             # Update the Harvest ID
             self.__insert_harvest_id__(person)
+            # Match the Harvest and Forecast Projects
+            self.__match_forecast_id__(person, forecast_people['people'])\
+            # Populate the full_name field
+            try: #protect against bad key error if someone didn't have fields filled in on Harvest
+                person.update(full_name=str(person['first_name'] + person['last_name']))
+            except Exception as e:
+                print("""Couldn't make full name for {}.  Make sure that person is setup in Harvest
+                      correctly""".format(person),e)
 
-        forecast_people = self.fore.get_forecast_people()
+        # Find orphaned Forecast People
+        orphan_f_list = self.__find_orphan_forecast_ids__(harvest_list=harvest_people['people'],
+                                                          forecast_list=forecast_people['people'])
 
-        # Insert the Forecast ID now that we have both lists
-        self.__insert_forecast_id__(harvest_list=people['people'], forecast_list=forecast_people['people'])
+        # Insert orphaned People into our dict before returning
+        if len(orphan_f_list) > 0:
+            for o in orphan_f_list:
+                # Get the Forecast information for each orphan, prepare for entry into the main dict
+                o.update(forecast_id=o.pop('id'))
+                harvest_people['people'].append(o)
 
-        return people
+        return harvest_people
 
     def munge_client_list(self):
         """
         Pulls the client list from Harvest and modifies the primary key for data warehouse
         """
-        clients = self.harv.get_harvest_clients()
-
+        harvest_clients = self.harv.get_harvest_clients()
+        forecast_clients = self.fore.get_forecast_clients()
         # Loop through each client and update the fields
 
-        for client in clients['clients']:
+        for client in harvest_clients['clients']:
             # update the Harvest ID column
             self.__insert_harvest_id__(client)
 
-        return clients
+            # Match the Harvest and Forecast Projects
+            self.__match_forecast_id__(client, forecast_clients['clients'])
+
+        # Find orphaned Forecast Clients
+        orphan_f_list = self.__find_orphan_forecast_ids__(harvest_list=harvest_clients['clients'],
+                                                          forecast_list=forecast_clients['clients'])
+
+        # Insert orphaned People into our dict before returning
+        if len(orphan_f_list) > 0:
+            for o in orphan_f_list:
+                # Get the Forecast information for each orphan, prepare for entry into the main dict
+                o.update(forecast_id=o.pop('id'))
+                harvest_clients['clients'].append(o)
+
+        return harvest_clients
 
     def munge_project_list(self):
         """
         Pulls both Harvest and Forecast project list so the two can be combined into one entity in data warehouse
         Also re-writes the primary keys to match data warehouse rather than the APIs
         """
-        projects = self.harv.get_harvest_projects()
+        harvest_projects = self.harv.get_harvest_projects()
+        forecast_projects = self.fore.get_forecast_projects()
         # Refresh the project and people tables before transforming data
         self.__refresh_memdb__(client=True)
         client_tbl = self.mem_db.client_tbl
 
         # Loop through each record and perform operations
 
-        for project in projects['projects']:
+        for project in harvest_projects['projects']:
             # Find projects that have no code and enter a zero
             if not project['code']:
                 project.update(code=0)
@@ -131,23 +182,33 @@ class Munger(object):
             # Update the Harvest ID column so the data warehouse can assign a serial identiy
             self.__insert_harvest_id__(project)
 
-            # Update the Client ID to match the data warehouse ID
+            # Match the Harvest and Forecast Projects
+            self.__match_forecast_id__(project, forecast_projects['projects'])
+
+            # Update the Client ID to match the data warehouse ID - find by harvest or forecast id
             for client in client_tbl:
-                if project['client_id'] == client.harvest_id:
+                if project['client_id'] == client.harvest_id or project['client_id'] == client.forecast_id:
                     project.update(client_id=client.id)
 
+        # Find orphaned Forecast Projects
+        orphan_f_list = self.__find_orphan_forecast_ids__(harvest_projects['projects'], forecast_projects['projects'])
 
-        forecast_projects = self.fore.get_forecast_projects()
+        # Insert orphaned Projects into our dict before returning
+        if len(orphan_f_list) > 0:
+            for o in orphan_f_list:
+                # Get the Forecast information for each orphan, prepare for entry into the main dict
+                o.update(forecast_id=o.pop('id'))
+                if o['client_id']: # If there is a client ID, update and append
+                    dw_client = get_client_by_forecast_id(o['client_id'])
+                    o.update(client_id=dw_client.id)
+                    o.update(client_name=dw_client.name)
+                else: # It's the Time Off Project, assign to RevUnit as Client ID and Name
+                    o.update(client_id=164)
+                    o.update(client_name='RevUnit')
 
-        # Insert the Forecast Project ID now that we have both lists
-        self.__insert_forecast_id__(harvest_list=projects['projects'], forecast_list=forecast_projects['projects'])
+                harvest_projects['projects'].append(o)
 
-        """
-        note to self: Need to get the Forecast Projects that are not in Harvest represented so we can do forecasting 
-                      dashboards
-        """
-
-        return projects
+        return harvest_projects
 
     def munge_task_list(self):
         """
@@ -226,7 +287,7 @@ class Munger(object):
             id = assn.pop('id')
             start_date = assn.pop('start_date')
             end_date = assn.pop('end_date')
-            try:
+            try: # Protect against dividing non-floats and blowing up the app
                 allocation = assn.pop('allocation') / 3600
             except Exception as e:
                 errors += 1
@@ -261,7 +322,8 @@ class Munger(object):
 # This class will hold a pull of tables from the DB so they can be processed in memory on large loads
 class MemDB(object):
     """
-    Uses the get_*_table() methods from the ORM Controller to get large data sets
+    Uses the get_*_table() methods from the ORM Controller
+    I would like to replace this with a sqlite instance in memory to eliminate for loops when search two records
     """
     def __init__(self):
         self.proj_tbl = get_project_table()
