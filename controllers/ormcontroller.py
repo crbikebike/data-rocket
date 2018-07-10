@@ -135,6 +135,7 @@ class DataRocketLog(db.Entity):
     event_description =  Required(str)
     event_datetime = Required(datetime)
     event_success = Required(bool)
+    event_documents = Optional(Json)
 
 
 # Parse URL to get connection info
@@ -266,6 +267,11 @@ def insert_time_assignment_list(assignment_list):
             error_count +=1
     p = calc_error_percent(record_count, error_count)
     print("Errors while inserting assignments: {err} ({p})".format(err=error_count, p=p))
+
+
+@db_session
+def write_rocket_log():
+    pass
 
 
 """

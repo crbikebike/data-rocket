@@ -14,5 +14,5 @@ if __name__ == '__main__':
     pb = PusherBot()
 
     # Load all data flagged as true and push to db
-    pb.load_data(people=True, clients=True, tasks=True, projects=True, assignments=True, time_entries=True,
-                 legacy_entries=True)
+    pb.load_data(full_load=True, people=True, clients=True, tasks=True, projects=True, assignments=True,
+                 time_entries=True, legacy_entries=True)

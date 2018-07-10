@@ -109,6 +109,9 @@ class Harvester(object):
 
         # Process the queue until empty
         api_list = []
+        id_list = [] # Keep track of ids added to list to prevent inserting multiple of the same record
+        api_json_result.update(id_list=id_list)
+
         print('Starting {} Harvest Pull'.format(root_key.capitalize()))
         while len(page_queue) > 0:
             page_num = page_queue.popleft()
@@ -121,15 +124,14 @@ class Harvester(object):
 
             # If there are keys to filter, do that. Otherwise just add the entire resposne to the api_list
             for entity in api_entities:
-                if filters:
+                if entity['id'] not in api_json_result['id_list']:
                     entity = self.__filter_results__(results_dict=entity, filter_list=filters)
+                    # Some results have sub-dictionaries so we want to flatten them
+                    flat_entity = self.__flatten_results__(entity)
+                    api_list.append(flat_entity)
+                    id_list.append(flat_entity['id'])
                 else:
-                    # Don't flter, just pass on the whole entity
                     pass
-
-                # Some results have sub-dictionaries so we want to flatten them
-                flat_entity = self.__flatten_results__(entity)
-                api_list.append(flat_entity)
 
         # Replace the endpoint data with our updated info
         api_json_result.update({root_key: api_list})
