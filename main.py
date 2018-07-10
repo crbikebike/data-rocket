@@ -1,5 +1,6 @@
 # Imports
 from controllers.datapusher import PusherBot
+from sys import argv
 from controllers.utilitybot import *
 
 """
@@ -7,6 +8,7 @@ This file facilitates the pull and load of data
 Current supported data sources: Harvest, Forecast
 Planned support: Namely, Xero
 """
+config = process_args(argv)
 
 if __name__ == '__main__':
 
@@ -14,5 +16,6 @@ if __name__ == '__main__':
     pb = PusherBot()
 
     # Load all data flagged as true and push to db
-    pb.load_data(full_load=True, people=True, clients=True, tasks=True, projects=True, assignments=True,
-                 time_entries=True, legacy_entries=True)
+    pb.load_data(full_load=config['full_load'], people=config['people'], clients=config['clients'],
+                 tasks=config['tasks'], projects=config['projects'], assignments=config['assignments'],
+                 time_entries=['time_entries'])
