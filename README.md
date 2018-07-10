@@ -44,7 +44,7 @@ $ python main.py
 
 **main.py**
 
-The main facilitator.  This file pulls data from Harvest (Forecast coming soon!) and inserts it to the PostgreSQL database
+The main facilitator.  This file kicks off the data pulls from Harvest and Forecast.
 
 
 **data_rocket_conf.py**
@@ -61,9 +61,13 @@ Setup files to ensure Heroku can deploy
 
 ### controllers Directory
 
+**ormobjects.py**
+
+Contains the classes that form database schema. Can be imported to any file that wants to talk to a database
+
 **ormcontroller.py**
 
-Contains the classes that connect to and perform the CRUD functions on the database
+Contains the methods and functions that connect to and perform the CRUD functions on the database
 
 **datagrabber.py**
 
