@@ -30,9 +30,13 @@ class PusherBot(object):
                   time_entries=False):
 
         if full_load:
-            # No graceful time diff right now, drop all data and create tables
+            # If full load, drop all and create
             db.drop_all_tables(with_all_data=True)
             db.create_tables()
+            self.mungy.set_load_dates(is_full_load=True)
+        else:
+            # If differential, don't drop tables and use the updated_from dates
+            self.mungy.set_load_dates(is_full_load=False)
 
         """
         For each flag, check if enabled and then process if true

@@ -8,7 +8,7 @@ from controllers.datagrabber import Harvester, Forecaster
 from controllers.ormcontroller import *
 from datetime import datetime, timedelta
 from numpy import is_busday
-
+from data_rocket_conf import config as conf
 
 # Classes
 
@@ -16,30 +16,32 @@ class Munger(object):
     """
     This class will transform the Harvest and Forecast Data into records for the Data Warehouse
     """
-    def __init__(self, is_test=False, is_full_load=False):
+    def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
         self.date_string = '%Y-%m-%d'
         self.datetime_string = '%Y-%m-%dT%H:%M:%SZ'
         self.mem_db = MemDB()
         self.last_updated_dict = get_updated_from_dates()
+
+
+    """
+    Utility Methods - These help keep code less reptitive
+    """
+
+    def set_load_dates(self, is_full_load):
         if is_full_load:
-            self.person_last_updated = ''
-            self.project_last_updated = ''
-            self.client_last_updated = ''
-            self.task_last_updated = ''
-            self.time_entry_last_updated = ''
+            self.person_last_updated = conf['FROM_DATE']
+            self.project_last_updated = conf['FROM_DATE']
+            self.client_last_updated = conf['FROM_DATE']
+            self.task_last_updated = conf['FROM_DATE']
+            self.time_entry_last_updated = conf['FROM_DATE']
         else:
             self.person_last_updated = self.last_updated_dict['person'].strftime(self.datetime_string)
             self.project_last_updated = self.last_updated_dict['project'].strftime(self.datetime_string)
             self.client_last_updated = self.last_updated_dict['client'].strftime(self.datetime_string)
             self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
             self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
-
-
-    """
-    Utility Methods - These help keep code less reptitive
-    """
 
     def __insert_harvest_id__(self, result_dict):
         # Insert Harvest ID, pop the old id key (Will be replaced by db identity key upon insert)
