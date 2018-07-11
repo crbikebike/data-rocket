@@ -94,6 +94,7 @@ class Task(db.Entity):
     id = PrimaryKey(int, auto=True)
     name = Optional(str)
     time_entries = Set(Time_Entry)
+    updated_at = Optional(datetime)
 
 
 class Time_Assignment(db.Entity):

@@ -124,7 +124,6 @@ def insert_people_list(people_list):
     p = calc_error_percent(record_count, error_count)
     print("Errors while inserting people: {err} ({p})".format(err=error_count, p=p))
 
-
 @db_session
 def insert_time_assignment_list(assignment_list):
     # Loop through every time assignment in the list and write to db
@@ -142,7 +141,12 @@ def insert_time_assignment_list(assignment_list):
 
 
 @db_session
-def write_rocket_log():
+def write_rocket_log(row_dict):
+    """
+    Will write a row in the log
+    :param row_dict:
+    :return:
+    """
     pass
 
 
@@ -203,6 +207,23 @@ def get_client_by_harvest_id(harvest_id):
 def get_client_by_forecast_id(forecast_id):
     client = Client.get(forecast_id=forecast_id)
     return client
+
+
+@db_session
+def get_time_entry_table():
+    te_tbl = select(te for te in Time_Entry)[:]
+    return te_tbl
+
+
+@db_session
+def get_updated_from_dates():
+    mp = max(person.updated_at for person in Person)
+    mpr = max(proj.updated_at for proj in Project)
+    mc = max(cli.updated_at for cli in Client)
+    mte = max(te.updated_at for te in Time_Entry)
+    mtsk = max(tsk.updated_at for tsk in Task)
+    return {'person': mp, 'project': mpr, 'client': mc, 'time_entry': mte, 'task': mtsk}
+
 
 """
 Utility Functions

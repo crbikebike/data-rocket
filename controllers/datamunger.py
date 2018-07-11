@@ -12,15 +12,16 @@ from numpy import is_busday
 
 # Classes
 
-
-# This class will transform the Harvest and Forecast Data into records for the Data Warehouse
 class Munger(object):
-
+    """
+    This class will transform the Harvest and Forecast Data into records for the Data Warehouse
+    """
     def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
         self.date_string = '%Y-%m-%d'
         self.mem_db = MemDB()
+        self.last_updated_dict = get_updated_from_dates()
 
     """
     Utility Methods - These help keep code less reptitive
@@ -229,39 +230,43 @@ class Munger(object):
         ppl_tbl = self.mem_db.ppl_tbl
         proj_tbl = self.mem_db.proj_tbl
         client_tbl = self.mem_db.client_tbl
+        te_tbl = self.mem_db.te_tbl
 
-        # Cycle through each entry and perform needed transformations
-
+        entry_keepers = [] # If you like it, put a ring on it.
         for entry in entries['time_entries']:
-            # Scrub references to user_id and user_name
-            entry.update(person_id=entry.pop('user_id'))
-            entry.update(person_name=entry.pop('user_name'))
+            # Cycle through each entry and perform needed transformations
+            if entry['id'] not in self.mem_db.time_entry_ids:
+                # Scrub references to user_id and user_name
+                entry.update(person_id=entry.pop('user_id'))
+                entry.update(person_name=entry.pop('user_name'))
 
-            # Calculate the total entry value
-            if not entry['billable_rate']:
-                entry.update(entry_amount=0)
-            else:
-                entry.update(entry_amount=(entry['hours'] * entry['billable_rate']))
-
-            # Update the related table IDs with the Data Warehouse entries
-            for person in ppl_tbl:
-                if entry['person_id'] == person.harvest_id:
-                    entry.update(person_id=person.id)
+                # Calculate the total entry value
+                if not entry['billable_rate']:
+                    entry.update(entry_amount=0)
                 else:
-                    pass
+                    entry.update(entry_amount=(entry['hours'] * entry['billable_rate']))
 
-            for project in proj_tbl:
-                if entry['project_id'] == project.harvest_id:
-                    entry.update(project_id=project.id)
-                else:
-                    pass
+                # Update the related table IDs with the Data Warehouse entries
+                for person in ppl_tbl:
+                    if entry['person_id'] == person.harvest_id:
+                        entry.update(person_id=person.id)
+                    else:
+                        pass
 
-            for client in client_tbl:
-                if entry['client_id'] == client.harvest_id:
-                    entry.update(client_id=client.id)
-                else:
-                    pass
+                for project in proj_tbl:
+                    if entry['project_id'] == project.harvest_id:
+                        entry.update(project_id=project.id)
+                    else:
+                        pass
 
+                for client in client_tbl:
+                    if entry['client_id'] == client.harvest_id:
+                        entry.update(client_id=client.id)
+                    else:
+                        pass
+                entry_keepers.append(entry)
+
+        entries.update(time_entries=entry_keepers) # Overwrite the entry list with the one we munged
         return entries
 
     def munge_legacy_harvest_entries(self, harvest_entry_list):
@@ -345,6 +350,8 @@ class MemDB(object):
         self.proj_tbl = get_project_table()
         self.ppl_tbl = get_person_table()
         self.client_tbl = get_client_table()
+        self.te_tbl = get_time_entry_table()
+        self.time_entry_ids = [te.harvest_id for te in self.te_tbl]
 
     def load_project_table(self):
         self.proj_tbl = get_project_table()
@@ -354,3 +361,6 @@ class MemDB(object):
 
     def load_client_table(self):
         self.client_tbl = get_client_table()
+
+    def load_time_entry_table(self):
+        self.te_tbl = get_time_entry_table()
