@@ -220,9 +220,9 @@ def get_updated_from_dates():
     mp = max(person.updated_at for person in Person)
     mpr = max(proj.updated_at for proj in Project)
     mc = max(cli.updated_at for cli in Client)
-    mte = max(te.updated_at for te in Time_Entry)
     mtsk = max(tsk.updated_at for tsk in Task)
-    return {'person': mp, 'project': mpr, 'client': mc, 'time_entry': mte, 'task': mtsk}
+    mte = max(te.updated_at for te in Time_Entry)
+    return {'person': mp, 'project': mpr, 'client': mc, 'task': mtsk, 'time_entry': mte}
 
 
 """

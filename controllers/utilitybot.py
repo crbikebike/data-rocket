@@ -24,11 +24,11 @@ def process_args(argv):
                 config.update({item: True})
                 start_list.append(item)
 
-        start_string = 'Starting {} data load for '.format(', '.join([s for s in start_list]))
+        start_string = 'Starting {} data load'.format(', '.join([s for s in start_list]))
         print(start_string)
         return config
 
-    else: #If started without any params, do full load
-        config.update(full_load=True)
-        print('Starting full_load data load')
+    else: #If started without any params, do diff load
+        config.update(full_load=False)
+        print('Starting diff data load')
         return config

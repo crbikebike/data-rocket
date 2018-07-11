@@ -16,12 +16,25 @@ class Munger(object):
     """
     This class will transform the Harvest and Forecast Data into records for the Data Warehouse
     """
-    def __init__(self, is_test=False):
+    def __init__(self, is_test=False, is_full_load=False):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
         self.date_string = '%Y-%m-%d'
         self.mem_db = MemDB()
         self.last_updated_dict = get_updated_from_dates()
+        if is_full_load:
+            self.person_last_updated = ''
+            self.project_last_updated = ''
+            self.client_last_updated = ''
+            self.task_last_updated = ''
+            self.time_entry_last_updated = ''
+        else:
+            self.person_last_updated = self.last_updated_dict['person']
+            self.project_last_updated = self.last_updated_dict['project']
+            self.client_last_updated = self.last_updated_dict['client']
+            self.task_last_updated = self.last_updated_dict['task']
+            self.time_entry_last_updated = self.last_updated_dict['time_entry']
+
 
     """
     Utility Methods - These help keep code less reptitive
@@ -99,7 +112,7 @@ class Munger(object):
         """
         This will pull the Harvest and Forecast user/people lists and combine them into one entry
         """
-        harvest_people = self.harv.get_harvest_users()
+        harvest_people = self.harv.get_harvest_users(updated_since=self.person_last_updated)
         harvest_people['people'] = harvest_people.pop('users')
         forecast_people = self.fore.get_forecast_people()
         # Loop through each person and update fields as needed
@@ -136,7 +149,7 @@ class Munger(object):
         """
         Pulls the client list from Harvest and modifies the primary key for data warehouse
         """
-        harvest_clients = self.harv.get_harvest_clients()
+        harvest_clients = self.harv.get_harvest_clients(updated_since=self.client_last_updated)
         forecast_clients = self.fore.get_forecast_clients()
         # Loop through each client and update the fields
 
@@ -165,7 +178,7 @@ class Munger(object):
         Pulls both Harvest and Forecast project list so the two can be combined into one entity in data warehouse
         Also re-writes the primary keys to match data warehouse rather than the APIs
         """
-        harvest_projects = self.harv.get_harvest_projects()
+        harvest_projects = self.harv.get_harvest_projects(updated_since=self.project_last_updated)
         forecast_projects = self.fore.get_forecast_projects()
         # Refresh the project and people tables before transforming data
         self.__refresh_memdb__(client=True)
@@ -215,7 +228,7 @@ class Munger(object):
         """
         Grabs tasks list from Harvest and returns them.  No transoformation needed.
         """
-        tasks = self.harv.get_harvest_tasks()
+        tasks = self.harv.get_harvest_tasks(updated_since=self.task_last_updated)
 
         return tasks
 
@@ -224,7 +237,7 @@ class Munger(object):
          Transforms the time entries table into data warehouse data.
          Replaces the API identiy columns for project, client, and person with the data warehouse PKs
         """
-        entries = self.harv.get_harvest_time_entries()
+        entries = self.harv.get_harvest_time_entries(updated_since=self.time_entry_last_updated)
         # Refresh the project and people tables before transforming data
         self.__refresh_memdb__(project=True, person=True, client=True)
         ppl_tbl = self.mem_db.ppl_tbl

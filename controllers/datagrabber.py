@@ -143,17 +143,15 @@ class Harvester(object):
     Each has a filter list that cuts the number of fields down to what is important for the data warehouse
     """
 
-    def get_harvest_time_entries(self, updated_since=''):
+    def get_harvest_time_entries(self, updated_since):
         root_key = 'time_entries'
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
 
         # Setup the endpoint params
         time_entry_params = {}
-        if updated_since:
-            time_entry_params.update(updated_since=updated_since) # Only pull entires updated since this date
-        if from_date:
-            time_entry_params.update({'from': from_date}) # If above param isn't present, will pull from this date
+        time_entry_params.update(updated_since=updated_since) # Only pull entires updated since this date
+        time_entry_params.update({'from': from_date}) # If above param isn't present, will pull from this date
         time_entry_params.update({'is_running': 'false'}) # Prevent pulling running timers
 
         # Perform data pull
@@ -161,38 +159,46 @@ class Harvester(object):
                                                 extra_params=time_entry_params)
         return time_entry_dict
 
-    def get_harvest_users(self):
+    def get_harvest_users(self, updated_since):
         root_key = 'users'
+        person_params = {}
+        person_params.update(updated_since=updated_since)  # Only pull entires updated since this date
         filters = ['id', 'first_name', 'last_name', 'email', 'timezone', 'weekly_capacity', 'is_contractor',
                    'is_active', 'roles', 'avatar_url', 'created_at', 'updated_at']
 
         # Perform data pull
-        users_dict = self.__get_api_data__(root_key=root_key, filters=filters)
+        users_dict = self.__get_api_data__(root_key=root_key, filters=filters, extra_params=person_params)
         return users_dict
 
-    def get_harvest_clients(self):
+    def get_harvest_clients(self, updated_since):
         root_key = 'clients'
+        client_params = {}
+        client_params.update(updated_since=updated_since)  # Only pull entires updated since this date
         filters = ['id', 'name', 'is_active', 'created_at', 'updated_at']
 
         # Perform data pull
-        clients_dict = self.__get_api_data__(root_key=root_key, filters=filters)
+        clients_dict = self.__get_api_data__(root_key=root_key, filters=filters, extra_params=client_params)
         return clients_dict
 
-    def get_harvest_projects(self):
+    def get_harvest_projects(self, updated_since):
         root_key = 'projects'
+        project_params = {}
+        project_params.update(updated_since=updated_since)  # Only pull entires updated since this date
         filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'budget', 'budget_is_monthly',
                    'created_at', 'updated_at', 'starts_on', 'ends_on', 'client']
 
         # Perform data pull
-        projects_dict = self.__get_api_data__(root_key=root_key, filters=filters)
+        projects_dict = self.__get_api_data__(root_key=root_key, filters=filters, extra_params=project_params)
         return projects_dict
 
-    def get_harvest_tasks(self):
+    def get_harvest_tasks(self, updated_since):
         root_key = 'tasks'
+        task_params = {}
+        task_params.update(updated_since=updated_since)  # Only pull entires updated since this date
         filters = ['id', 'name']
 
         # Perform data pull
-        tasks_dict = self.__get_api_data__(root_key=root_key, filters=filters)
+        tasks_dict = self.__get_api_data__(root_key=root_key, filters=filters, extra_params=task_params)
         return tasks_dict
 
 
