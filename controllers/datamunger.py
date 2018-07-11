@@ -20,6 +20,7 @@ class Munger(object):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
         self.date_string = '%Y-%m-%d'
+        self.datetime_string = '%Y-%m-%dT%H:%M:%SZ'
         self.mem_db = MemDB()
         self.last_updated_dict = get_updated_from_dates()
         if is_full_load:
@@ -29,11 +30,11 @@ class Munger(object):
             self.task_last_updated = ''
             self.time_entry_last_updated = ''
         else:
-            self.person_last_updated = self.last_updated_dict['person']
-            self.project_last_updated = self.last_updated_dict['project']
-            self.client_last_updated = self.last_updated_dict['client']
-            self.task_last_updated = self.last_updated_dict['task']
-            self.time_entry_last_updated = self.last_updated_dict['time_entry']
+            self.person_last_updated = self.last_updated_dict['person'].strftime(self.datetime_string)
+            self.project_last_updated = self.last_updated_dict['project'].strftime(self.datetime_string)
+            self.client_last_updated = self.last_updated_dict['client'].strftime(self.datetime_string)
+            self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
+            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
 
 
     """
@@ -103,6 +104,18 @@ class Munger(object):
         if client:
             self.mem_db.load_client_table()
 
+    def __trim_forecast_results__(self, f_result_set, trim_datetime):
+        """
+        This will trip the result set down to the updated_since date
+        """
+        keeper_list = []
+        for f_obj in f_result_set:
+            if f_obj['updated_at'] > trim_datetime:
+                keeper_list.append(f_obj)
+            else:
+                pass
+            return keeper_list
+
     """
     Munge Methods
     The methods below modify their namesake data in ways needed to be useful for the data warehouse tool.
@@ -115,22 +128,32 @@ class Munger(object):
         harvest_people = self.harv.get_harvest_users(updated_since=self.person_last_updated)
         harvest_people['people'] = harvest_people.pop('users')
         forecast_people = self.fore.get_forecast_people()
+        # Replace the full Forecast list with a trimmed one based on updated_at date
+        forecast_people['people'] = self.__trim_forecast_results__(forecast_people['people'],self.person_last_updated)
         # Loop through each person and update fields as needed
 
+        person_keepers = [] # If you like them, put a ring on them
         for person in harvest_people['people']:
-            # Filler goals until goals are input
-            person.update(weekly_goal=0)
-            person.update(yearly_goal=0)
-            # Update the Harvest ID
-            self.__insert_harvest_id__(person)
-            # Match the Harvest and Forecast Projects
-            self.__match_forecast_id__(person, forecast_people['people'])\
-            # Populate the full_name field
-            try: #protect against bad key error if someone didn't have fields filled in on Harvest
-                person.update(full_name=str(person['first_name'] + ' ' + person['last_name']))
-            except Exception as e:
-                print("""Couldn't make full name for {}.  Make sure that person is setup in Harvest
-                      correctly""".format(person),e)
+            if person['id'] not in self.mem_db.people_ids:
+                # Filler goals until goals are input
+                person.update(weekly_goal=0)
+                person.update(yearly_goal=0)
+                # Update the Harvest ID
+                self.__insert_harvest_id__(person)
+                # Match the Harvest and Forecast Projects
+                self.__match_forecast_id__(person, forecast_people['people'])\
+                # Populate the full_name field
+                try: #protect against bad key error if someone didn't have fields filled in on Harvest
+                    person.update(full_name=str(person['first_name'] + ' ' + person['last_name']))
+                except Exception as e:
+                    print("""Couldn't make full name for {}.  Make sure that person is setup in Harvest
+                          correctly""".format(person),e)
+                person_keepers.append(person)
+            else:
+                pass # One day will be an update function
+
+        # Overwrite person list with the keeper list
+        harvest_people.update(people=person_keepers)
 
         # Find orphaned Forecast People
         orphan_f_list = self.__find_orphan_forecast_ids__(harvest_list=harvest_people['people'],
@@ -151,14 +174,20 @@ class Munger(object):
         """
         harvest_clients = self.harv.get_harvest_clients(updated_since=self.client_last_updated)
         forecast_clients = self.fore.get_forecast_clients()
+        # Replace the full Forecast list with a trimmed one based on updated_at date
+        forecast_clients['clients'] = self.__trim_forecast_results__(forecast_clients['clients'],
+                                                                     self.client_last_updated)
         # Loop through each client and update the fields
-
+        client_keepers = []
         for client in harvest_clients['clients']:
-            # update the Harvest ID column
-            self.__insert_harvest_id__(client)
+            if client['id'] not in self.mem_db.client_ids:
+                # update the Harvest ID column
+                self.__insert_harvest_id__(client)
 
-            # Match the Harvest and Forecast Projects
-            self.__match_forecast_id__(client, forecast_clients['clients'])
+                # Match the Harvest and Forecast Projects
+                self.__match_forecast_id__(client, forecast_clients['clients'])
+        # Overwrite the client list with the keepers
+        harvest_clients.update(clients=client_keepers)
 
         # Find orphaned Forecast Clients
         orphan_f_list = self.__find_orphan_forecast_ids__(harvest_list=harvest_clients['clients'],
@@ -180,29 +209,37 @@ class Munger(object):
         """
         harvest_projects = self.harv.get_harvest_projects(updated_since=self.project_last_updated)
         forecast_projects = self.fore.get_forecast_projects()
+        # Replace the full Forecast list with a trimmed one based on updated_at date
+        forecast_projects['projects'] = self.__trim_forecast_results__(forecast_projects['projects'],
+                                                                       self.project_last_updated)
         # Refresh the project and people tables before transforming data
         self.__refresh_memdb__(client=True)
         client_tbl = self.mem_db.client_tbl
 
         # Loop through each record and perform operations
-
+        project_keepers = []
         for project in harvest_projects['projects']:
-            # Find projects that have no code and enter a zero
-            if not project['code']:
-                project.update(code=0)
+            if project['id'] not in self.mem_db.project_ids:
+                # Find projects that have no code and enter a zero
+                if not project['code']:
+                    project.update(code=0)
+                else:
+                    pass
+
+                # Update the Harvest ID column so the data warehouse can assign a serial identiy
+                self.__insert_harvest_id__(project)
+
+                # Match the Harvest and Forecast Projects
+                self.__match_forecast_id__(project, forecast_projects['projects'])
+
+                # Update the Client ID to match the data warehouse ID - find by harvest or forecast id
+                for client in client_tbl:
+                    if project['client_id'] == client.harvest_id or project['client_id'] == client.forecast_id:
+                        project.update(client_id=client.id)
             else:
                 pass
-
-            # Update the Harvest ID column so the data warehouse can assign a serial identiy
-            self.__insert_harvest_id__(project)
-
-            # Match the Harvest and Forecast Projects
-            self.__match_forecast_id__(project, forecast_projects['projects'])
-
-            # Update the Client ID to match the data warehouse ID - find by harvest or forecast id
-            for client in client_tbl:
-                if project['client_id'] == client.harvest_id or project['client_id'] == client.forecast_id:
-                    project.update(client_id=client.id)
+        # Overwrite the project list with the keepers
+        harvest_projects.update(projects=project_keepers)
 
         # Find orphaned Forecast Projects
         orphan_f_list = self.__find_orphan_forecast_ids__(harvest_projects['projects'], forecast_projects['projects'])
@@ -364,7 +401,10 @@ class MemDB(object):
         self.ppl_tbl = get_person_table()
         self.client_tbl = get_client_table()
         self.te_tbl = get_time_entry_table()
-        self.time_entry_ids = [te.harvest_id for te in self.te_tbl]
+        self.time_entry_ids = [te.id for te in self.te_tbl]
+        self.people_ids = [p.harvest_id for p in self.ppl_tbl]
+        self.project_ids = [prj.harvest_id for prj in self.proj_tbl]
+        self.client_ids = [c.harvest_id for c in self.client_tbl]
 
     def load_project_table(self):
         self.proj_tbl = get_project_table()

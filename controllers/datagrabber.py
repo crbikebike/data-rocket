@@ -68,7 +68,7 @@ class Harvester(object):
                 flattened_dict.update(flattened_fields)
                 flattened_dict.pop(pk)
             elif type(pv) is list:
-                # enum_pv = dict(enumerate(pv))
+
                 json_pv = json.dumps(pv)
                 flattened_dict.update(roles=json_pv)
             else:
@@ -195,7 +195,7 @@ class Harvester(object):
         root_key = 'tasks'
         task_params = {}
         task_params.update(updated_since=updated_since)  # Only pull entires updated since this date
-        filters = ['id', 'name']
+        filters = ['id', 'name', 'updated_at']
 
         # Perform data pull
         tasks_dict = self.__get_api_data__(root_key=root_key, filters=filters, extra_params=task_params)
@@ -252,7 +252,7 @@ class Forecaster(object):
 
     def __get_forecast_dates__(self):
         """
-        Gets the first date of the previous month and last day of 6 months from now
+        Gets the first date of the previous month and last day of 3 months from now
         This is used to see how much Forecast history and future to pull
         """
         now = datetime.now()
@@ -260,7 +260,7 @@ class Forecaster(object):
         time_machine = now - timedelta(days=30)
         look_behind = time_machine.strftime('%Y-%m-01')
         # Get the last date of 6-ish months from now
-        future_machine = now + timedelta(days=150)
+        future_machine = now + timedelta(days=90)
         eom = calendar.monthrange(future_machine.year, future_machine.month)[1]
         look_ahead = future_machine.strftime('%Y-%m-{d}'.format(d=eom))
 

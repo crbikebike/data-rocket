@@ -41,7 +41,7 @@ def insert_time_entries_list(time_entry_list):
             db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting time_entries: {err} ({p})".format(err=error_count, p=p))
 
 
@@ -57,7 +57,7 @@ def insert_legacy_time_entries_list(legacy_time_entry_list):
             db.execute("INSERT INTO public.harvest_entries ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting time_entries: {err} ({p})".format(err=error_count, p=p))
 
 
@@ -73,7 +73,7 @@ def insert_tasks_list(tasks_list):
             db.execute("INSERT INTO public.task ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting tasks: {err} ({p})".format(err=error_count, p=p))
 
 
@@ -89,7 +89,7 @@ def insert_clients_list(client_list):
             db.execute("INSERT INTO public.client ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting clients: {err} ({p})".format(err=error_count, p=p))
 
 
@@ -105,7 +105,7 @@ def insert_projects_list(project_list):
             db.execute("INSERT INTO public.project ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting projects: {err} ({p})".format(err=error_count, p=p))
 
 
@@ -121,7 +121,7 @@ def insert_people_list(people_list):
             db.execute("INSERT INTO public.person ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting people: {err} ({p})".format(err=error_count, p=p))
 
 @db_session
@@ -136,7 +136,7 @@ def insert_time_assignment_list(assignment_list):
             db.execute("INSERT INTO public.time_assignment ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-    p = calc_error_percent(record_count, error_count)
+    p = "Out of {}".format(record_count)
     print("Errors while inserting assignments: {err} ({p})".format(err=error_count, p=p))
 
 
