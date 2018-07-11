@@ -19,3 +19,6 @@ if __name__ == '__main__':
     pb.load_data(full_load=config['full_load'], people=config['people'], clients=config['clients'],
                  tasks=config['tasks'], projects=config['projects'], assignments=config['assignments'],
                  time_entries=['time_entries'])
+
+
+    write_load_completion(argv[:1])

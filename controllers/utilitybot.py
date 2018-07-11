@@ -1,6 +1,8 @@
 """
 Some simple functions that don't have a more natural home
 """
+from controllers.ormcontroller import write_rocket_log
+from datetime import datetime
 
 def process_args(argv):
     """
@@ -32,3 +34,11 @@ def process_args(argv):
         config.update(full_load=False)
         print('Starting diff data load')
         return config
+
+def write_load_completion(documents):
+    description = 'load completed'
+    now = datetime.now()
+    success = True
+    docs = documents
+
+    write_rocket_log(description=description, timestamp=now, success=success, documents=documents)

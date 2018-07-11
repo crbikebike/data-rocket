@@ -141,13 +141,12 @@ def insert_time_assignment_list(assignment_list):
 
 
 @db_session
-def write_rocket_log(row_dict):
+def write_rocket_log(description, timestamp, success, documents=''):
     """
     Will write a row in the log
-    :param row_dict:
-    :return:
     """
-    pass
+    row = DataRocketLog(event_description=description, event_datetime=timestamp, event_success=success,
+                        event_documents=documents)
 
 
 """
