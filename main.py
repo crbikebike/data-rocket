@@ -21,4 +21,4 @@ if __name__ == '__main__':
                  time_entries=['time_entries'])
 
 
-    write_load_completion(argv[:1])
+    write_load_completion(argv[1:])
