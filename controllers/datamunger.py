@@ -117,7 +117,7 @@ class Munger(object):
                 keeper_list.append(f_obj)
             else:
                 pass
-            return keeper_list
+        return keeper_list
 
     """
     Munge Methods
@@ -189,6 +189,8 @@ class Munger(object):
 
                 # Match the Harvest and Forecast Projects
                 self.__match_forecast_id__(client, forecast_clients['clients'])
+                client_keepers.append(client)
+
         # Overwrite the client list with the keepers
         harvest_clients.update(clients=client_keepers)
 
@@ -215,7 +217,7 @@ class Munger(object):
         # Replace the full Forecast list with a trimmed one based on updated_at date
         forecast_projects['projects'] = self.__trim_forecast_results__(forecast_projects['projects'],
                                                                        self.project_last_updated)
-        # Refresh the project and people tables before transforming data
+        # Refresh the client table before transforming data
         self.__refresh_memdb__(client=True)
         client_tbl = self.mem_db.client_tbl
 
@@ -239,6 +241,7 @@ class Munger(object):
                 for client in client_tbl:
                     if project['client_id'] == client.harvest_id or project['client_id'] == client.forecast_id:
                         project.update(client_id=client.id)
+                project_keepers.append(project)
             else:
                 pass
         # Overwrite the project list with the keepers
