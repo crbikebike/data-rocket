@@ -343,7 +343,8 @@ class Munger(object):
         return legacy_entry_list
 
     def munge_forecast_assignments(self):
-        """
+        """Converts Forecast API into data warehouse friendly data
+
         Forecast API is very different than Harvest, so requires quite a bit of munging.
         Takes the date range from the Forecast entry and splits it into individual business day entries
         Calculates the hours/day for each assignment (source shows in seconds)
@@ -432,7 +433,11 @@ The Munge 2.0 Class below
 
 class UberMunge(object):
     """
-    This class transforms data before sending off to the DB
+    This class transforms data before sending off to the DB for insert or update
+
+    Todos:
+        Split getting last-date-updated or full-load dates from the grouped function and have each munge grab its own
+        last-date-updated individually
     """
     def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)

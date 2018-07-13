@@ -257,8 +257,8 @@ class Forecaster(object):
         This is used to see how much Forecast history and future to pull
         """
         if self.is_test:
-            past_dates = 5
-            future_dates = 5
+            past_dates = 2
+            future_dates = 3
         else:
             past_dates = 30
             future_dates = 90
