@@ -167,6 +167,7 @@ class Munger(object):
             for o in orphan_f_list:
                 # Get the Forecast information for each orphan, prepare for entry into the main dict
                 o.update(forecast_id=o.pop('id'))
+                o.update(full_name=str(o['first_name'] + ' ' + o['last_name']))
                 harvest_people['people'].append(o)
 
         return harvest_people
