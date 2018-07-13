@@ -467,7 +467,6 @@ class UberMunge(object):
     All these functions take in data, transform as needed, and push to the db
     """
 
-
     @db_session
     def mung_person(self):
         """Get all Harvest and Forecast people, combine, transform, and push them to db
@@ -490,13 +489,15 @@ class UberMunge(object):
         harvest_tasks_list = harvest_tasks['tasks']
 
         for task in harvest_tasks_list:
-            # If a task is already in the DB, update it.  Otherwise insert it.
-
             t_id = task['id']
+            dt_updated_at = datetime.strptime(task['updated_at'],self.datetime_string)
+            task.update(updated_at=dt_updated_at)
+
+            # If a task is already in the DB, update it.  Otherwise insert it.
             if Task.get(id=t_id):
                 Task[t_id].set(**task)
             else:
-                Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
+                t = Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
 
             # Commit the record to the db
             commit()

@@ -31,9 +31,11 @@ class PusherBot(object):
             db.drop_all_tables(with_all_data=True)
             db.create_tables()
             self.mungy.set_load_dates(is_full_load=True)
+            self.uber.set_load_dates(is_full_load=True)
         else:
             # If differential, don't drop tables and use the updated_from dates
             self.mungy.set_load_dates(is_full_load=False)
+            self.uber.set_load_dates(is_full_load=False)
 
         """
         For each flag, check if enabled and then process if true
@@ -53,7 +55,7 @@ class PusherBot(object):
 
         if tasks or full_load:
             print('Inserting Task DB records')
-            self.uber.munge_task
+            self.uber.munge_task()
 
         if projects or full_load:
             self.munged_projects = self.mungy.munge_project_list()
