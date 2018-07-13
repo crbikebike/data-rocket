@@ -212,6 +212,7 @@ class Forecaster(object):
         self.forecast_headers.update({'User-Agent': user_agent})
         self.forecast_params = {}
         self.date_string = '%Y-%m-%d'
+        self.is_test = is_test
 
     """
     Utility Methods
@@ -255,12 +256,19 @@ class Forecaster(object):
         Gets the first date of the previous month and last day of 3 months from now
         This is used to see how much Forecast history and future to pull
         """
+        if self.is_test:
+            past_dates = 5
+            future_dates = 5
+        else:
+            past_dates = 30
+            future_dates = 90
+
         now = datetime.now()
         # Get the first date of the past month
-        time_machine = now - timedelta(days=30)
+        time_machine = now - timedelta(days=past_dates)
         look_behind = time_machine.strftime('%Y-%m-01')
         # Get the last date of 6-ish months from now
-        future_machine = now + timedelta(days=90)
+        future_machine = now + timedelta(days=future_dates)
         eom = calendar.monthrange(future_machine.year, future_machine.month)[1]
         look_ahead = future_machine.strftime('%Y-%m-{d}'.format(d=eom))
 

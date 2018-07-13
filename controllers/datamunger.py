@@ -423,3 +423,74 @@ class MemDB(object):
 
     def load_time_entry_table(self):
         self.te_tbl = get_time_entry_table()
+
+
+"""
+The Munge 2.0 Class below
+"""
+
+class UberMunge(object):
+    """
+    This class transforms data before sending off to the DB
+    """
+    def __init__(self, is_test=False):
+        self.harv = Harvester(is_test=is_test)
+        self.fore = Forecaster(is_test=is_test)
+        self.date_string = '%Y-%m-%d'
+        self.datetime_string = '%Y-%m-%dT%H:%M:%SZ'
+        self.last_updated_dict = get_updated_from_dates()
+        self.full_load_datetime = '2010-01-01T00:00:00Z'
+
+    """
+    Utility Methods
+    These help keep code less reptitive
+    """
+
+    def set_load_dates(self, is_full_load):
+        if is_full_load:
+            self.person_last_updated = self.full_load_datetime
+            self.project_last_updated = self.full_load_datetime
+            self.client_last_updated = self.full_load_datetime
+            self.task_last_updated = self.full_load_datetime
+            self.time_entry_last_updated = conf['FROM_DATE']
+        else:
+            self.person_last_updated = self.last_updated_dict['person'].strftime(self.datetime_string)
+            self.project_last_updated = self.last_updated_dict['project'].strftime(self.datetime_string)
+            self.client_last_updated = self.last_updated_dict['client'].strftime(self.datetime_string)
+            self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
+            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
+
+
+    """
+    Munge Functions
+    All these functions take in data, transform as needed, and push to the db
+    """
+
+
+    @db_session
+    def mung_person(self):
+        pass
+
+    @db_session
+    def munge_task(self):
+        """Get all Harvest Tasks and send them to the db.
+
+        :return:
+        None
+        """
+
+        # Get the Harvest Tasks List
+        harvest_tasks = self.harv.get_harvest_tasks(updated_since=self.task_last_updated)
+        harvest_tasks_list = harvest_tasks['tasks']
+
+        for task in harvest_tasks_list:
+            # If a task is already in the DB, update it.  Otherwise insert it.
+
+            t_id = task['id']
+            if Task.get(id=t_id):
+                Task[t_id].set(**task)
+            else:
+                Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
+
+            # Commit the record to the db
+            commit()

@@ -20,11 +20,7 @@ Use the Harvest Param to only pull since last update, only pull things after tha
 class PusherBot(object):
     # This class handles collating and pushing clean data to the DB
     def __init__(self, is_test=False):
-        if is_test:
-            pass # Someday there will be test data to fill and rainbows and gumdrops will be everywhere
-        else:
-            # Instantiate our friendly data Munger to transform data
-            self.mungy = Munger()
+        self.mungy = Munger(is_test=is_test)
 
     def load_data(self, full_load=False, people=False, clients=False, tasks=False, projects=False, assignments=False,
                   time_entries=False):
