@@ -84,9 +84,9 @@ class Munger(object):
         return orphan_list
 
     def __match_forecast_id__(self, harvest_obj, forecast_list):
-        """
-        Takes a single harvest object (Like a Project or Person dict) and checks if a corresponding value exists in a
-        list of Forecast Objects
+        """Takes a single harvest object (Like a Project or Person dict) and checks if a corresponding value exists in a
+            list of Forecast Objects
+
         :param harvest_obj: Dictionary with Harvest API Results
         :param forecast_list: List of Dictionaries with Forecast Results
         """
@@ -167,6 +167,7 @@ class Munger(object):
             for o in orphan_f_list:
                 # Get the Forecast information for each orphan, prepare for entry into the main dict
                 o.update(forecast_id=o.pop('id'))
+                o.update(full_name=str(o['first_name'] + ' ' + o['last_name']))
                 harvest_people['people'].append(o)
 
         return harvest_people
@@ -469,6 +470,11 @@ class UberMunge(object):
 
     @db_session
     def mung_person(self):
+        """Get all Harvest and Forecast people, combine, transform, and push them to db
+
+        :return:
+        None
+        """
         pass
 
     @db_session

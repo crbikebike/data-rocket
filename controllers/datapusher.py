@@ -2,7 +2,7 @@
 
 ## Imports
 from controllers.ormcontroller import *
-from controllers.datamunger import Munger
+from controllers.datamunger import Munger, UberMunge
 
 """
 ### Needed Functions ###
@@ -21,6 +21,7 @@ class PusherBot(object):
     # This class handles collating and pushing clean data to the DB
     def __init__(self, is_test=False):
         self.mungy = Munger(is_test=is_test)
+        self.uber = UberMunge(is_test=is_test)
 
     def load_data(self, full_load=False, people=False, clients=False, tasks=False, projects=False, assignments=False,
                   time_entries=False):
@@ -51,10 +52,8 @@ class PusherBot(object):
             insert_clients_list(self.client_list)
 
         if tasks or full_load:
-            self.munged_tasks = self.mungy.munge_task_list()
             print('Inserting Task DB records')
-            self.tasks_list = self.munged_tasks['tasks']
-            insert_tasks_list(self.tasks_list)
+            self.uber.munge_task
 
         if projects or full_load:
             self.munged_projects = self.mungy.munge_project_list()
