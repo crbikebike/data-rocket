@@ -1,7 +1,7 @@
 # Imports
 from controllers.datapusher import PusherBot
 from sys import argv
-from controllers.utilitybot import *
+from controllers.utilitybot import process_args, logger
 from data_rocket_conf import config as drc
 
 """
@@ -21,5 +21,6 @@ if __name__ == '__main__':
                  tasks=config['tasks'], projects=config['projects'], assignments=config['assignments'],
                  time_entries=['time_entries'])
 
-
-    write_load_completion(argv[1:])
+    # Write to completion log
+    logger.load_success = True
+    logger.write_load_completion(argv[1:])

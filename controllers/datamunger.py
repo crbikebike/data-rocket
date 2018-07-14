@@ -6,13 +6,12 @@ It will greatly simplify the actions taken within the main.py file
 # Imports
 from controllers.datagrabber import Harvester, Forecaster
 from controllers.ormcontroller import *
+from controllers.utilitybot import datetime_string, date_string, logger
 from datetime import datetime, timedelta
 from numpy import is_busday
 from data_rocket_conf import config as conf
 
 # Classes
-
-
 class UberMunge(object):
     """This class transforms data before sending off to the DB for insert or update
 
@@ -23,8 +22,6 @@ class UberMunge(object):
     def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
-        self.date_string = '%Y-%m-%d'
-        self.datetime_string = '%Y-%m-%dT%H:%M:%SZ'
         self.last_updated_dict = get_updated_from_dates()
         self.full_load_datetime = '2010-01-01T00:00:00Z'
 
@@ -35,7 +32,7 @@ class UberMunge(object):
     """
 
     @db_session
-    def mung_person(self):
+    def munge_person(self):
         """Get all Harvest and Forecast people, combine, transform, and push them to db
 
         :return:
@@ -56,14 +53,16 @@ class UberMunge(object):
             h_person.update(harvest_id=h_person.pop('id'))
             h_person.update(forecast_id=None)
             # Convert the datetime strings into python datetime objects so the ORM can use them
-            h_person.update(created_at=datetime.strptime(h_person['created_at'], self.datetime_string))
-            h_person.update(updated_at=datetime.strptime(h_person['updated_at'], self.datetime_string))
+            h_person.update(created_at=datetime.strptime(h_person['created_at'], datetime_string))
+            h_person.update(updated_at=datetime.strptime(h_person['updated_at'], datetime_string))
 
-            for f_person in forecast_people_list:
+            for idx, f_person in enumerate(forecast_people_list):
                 if h_person['harvest_id'] == f_person['harvest_id']:
                     h_person.update(forecast_id=f_person['id'])
+                    forecast_people_list.pop(idx)
 
         # For each complete Person record, check if in db and then insert/update accordingly
+        logger.start_load_msg('people', harvest_people_list)
         for person in harvest_people_list:
             harvest_id = person['harvest_id']
             full_name = "{fn} {ln}".format(fn=person['first_name'], ln=person['last_name'])
@@ -88,6 +87,18 @@ class UberMunge(object):
                             created_at=person['created_at'],
                             updated_at=person['updated_at'])
 
+        # Cycle through remaining Forecast people to update forecast_id, if needed
+        for f_person in forecast_people_list:
+            if f_person['harvest_id']:
+                p = Person.get(harvest_id=f_person['harvest_id'])
+                p.forecast_id = f_person['id']
+            else:
+                pass
+
+    @db_session
+    def munge_client(self):
+        pass
+
     @db_session
     def munge_task(self):
         """Get all Harvest Tasks and send them to the db.
@@ -100,9 +111,10 @@ class UberMunge(object):
         harvest_tasks = self.harv.get_harvest_tasks(updated_since=updated_since)
         harvest_tasks_list = harvest_tasks['tasks']
 
+        logger.start_load_msg('tasks', harvest_tasks_list)
         for task in harvest_tasks_list:
             t_id = task['id']
-            dt_updated_at = datetime.strptime(task['updated_at'], self.datetime_string)
+            dt_updated_at = datetime.strptime(task['updated_at'], datetime_string)
             task.update(updated_at=dt_updated_at)
 
             # If a task is already in the DB, update it.  Otherwise insert it.
@@ -139,11 +151,11 @@ class UberMunge(object):
             self.task_last_updated = self.full_load_datetime
             self.time_entry_last_updated = conf['FROM_DATE']
         else:
-            self.person_last_updated = self.last_updated_dict['person'].strftime(self.datetime_string)
-            self.project_last_updated = self.last_updated_dict['project'].strftime(self.datetime_string)
-            self.client_last_updated = self.last_updated_dict['client'].strftime(self.datetime_string)
-            self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
-            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
+            self.person_last_updated = self.last_updated_dict['person'].strftime(datetime_string)
+            self.project_last_updated = self.last_updated_dict['project'].strftime(datetime_string)
+            self.client_last_updated = self.last_updated_dict['client'].strftime(datetime_string)
+            self.task_last_updated = self.last_updated_dict['task'].strftime(datetime_string)
+            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(datetime_string)
 
     def __trim_forecast_results__(self, f_result_set, trim_datetime):
         """This will trip the result set down to the updated_since date
@@ -168,14 +180,13 @@ class Munger(object):
     def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
-        self.date_string = '%Y-%m-%d'
-        self.datetime_string = '%Y-%m-%dT%H:%M:%SZ'
         self.mem_db = MemDB()
         self.last_updated_dict = get_updated_from_dates()
         self.full_load_datetime = '2010-01-01T00:00:00Z'
 
     """
     Munge Methods
+    
     The methods below modify their namesake data in ways needed to be useful for the data warehouse tool.
     """
 
@@ -231,7 +242,6 @@ class Munger(object):
         """Pulls the client list from Harvest and modifies the primary key for data warehouse
 
         """
-
         harvest_clients = self.harv.get_harvest_clients(updated_since=self.client_last_updated)
         forecast_clients = self.fore.get_forecast_clients()
         # Replace the full Forecast list with a trimmed one based on updated_at date
@@ -412,7 +422,6 @@ class Munger(object):
         """
 
         assignments = self.fore.get_forecast_assignments()
-        date_string = self.date_string
         # Refresh the project and people tables before transforming data
         self.__refresh_memdb__(project=True, person=True)
         ppl_tbl = self.mem_db.ppl_tbl
@@ -485,11 +494,11 @@ class Munger(object):
             self.task_last_updated = self.full_load_datetime
             self.time_entry_last_updated = conf['FROM_DATE']
         else:
-            self.person_last_updated = self.last_updated_dict['person'].strftime(self.datetime_string)
-            self.project_last_updated = self.last_updated_dict['project'].strftime(self.datetime_string)
-            self.client_last_updated = self.last_updated_dict['client'].strftime(self.datetime_string)
-            self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
-            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
+            self.person_last_updated = self.last_updated_dict['person'].strftime(datetime_string)
+            self.project_last_updated = self.last_updated_dict['project'].strftime(datetime_string)
+            self.client_last_updated = self.last_updated_dict['client'].strftime(datetime_string)
+            self.task_last_updated = self.last_updated_dict['task'].strftime(datetime_string)
+            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(datetime_string)
 
     def __insert_harvest_id__(self, result_dict):
         # Insert Harvest ID, pop the old id key (Will be replaced by db identity key upon insert)
@@ -504,7 +513,6 @@ class Munger(object):
 
     def __make_date_list__(self, start, end):
         # This takes two dates and provides the dates between them, inclusive of start and end
-        date_string = self.date_string
         start_date = datetime.strptime(start, date_string)
         end_date = datetime.strptime(end, date_string)
         dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]

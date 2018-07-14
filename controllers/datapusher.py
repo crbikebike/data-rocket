@@ -42,10 +42,8 @@ class PusherBot(object):
         """
         
         if people or full_load:
-            self.munged_people = self.mungy.munge_person_list()
-            print('Inserting People DB records')
-            self.people_list = self.munged_people['people']
-            insert_people_list(self.people_list)
+            print('Pushing People Records')
+            self.uber.munge_person()
 
         if clients or full_load:
             self.munged_clients = self.mungy.munge_client_list()
@@ -54,7 +52,7 @@ class PusherBot(object):
             insert_clients_list(self.client_list)
 
         if tasks or full_load:
-            print('Inserting Task DB records')
+            print('Pushing Task Records')
             self.uber.munge_task()
 
         if projects or full_load:
