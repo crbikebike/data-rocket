@@ -6,7 +6,7 @@ It will greatly simplify the actions taken within the main.py file
 # Imports
 from controllers.datagrabber import Harvester, Forecaster
 from controllers.ormcontroller import *
-from controllers.utilitybot import datetime_string, date_string, logger
+from controllers.utilitybot import datetime_string, date_string, datetime_str_ms, logger
 from datetime import datetime, timedelta
 from numpy import is_busday
 from data_rocket_conf import config as conf
@@ -64,8 +64,9 @@ class UberMunge(object):
                     pass
 
         # For each Person record, check if in db and then insert/update accordingly
-        logger.start_load_msg('people', harvest_people_list)
-        for person in harvest_people_list:
+        print('Loading People:')
+        logger.print_progress_bar(iteration=0, total=len(harvest_people_list))
+        for idx, person in enumerate(harvest_people_list):
             harvest_id = person['harvest_id']
             full_name = "{fn} {ln}".format(fn=person['first_name'], ln=person['last_name'])
 
@@ -90,23 +91,26 @@ class UberMunge(object):
                             updated_at=person['updated_at'])
             # Commit the record
             db.commit()
+            logger.print_progress_bar(iteration=idx + 1,total=len(harvest_people_list))
 
         # Cycle through remaining Forecast people to update forecast_id, if needed
         for f_person in forecast_people_list:
+            f_person.update(forecast_id=f_person.pop('id'))
             full_name = "{fn} {ln}".format(fn=f_person['first_name'], ln=f_person['last_name'])
             is_active = not f_person.pop('archived')
             f_person.update(is_active=is_active)
+            f_person.update(updated_at=datetime.strptime(f_person['updated_at'], datetime_str_ms))
 
             if f_person['harvest_id']:
                 p = Person.get(harvest_id=f_person['harvest_id'])
-                p.forecast_id = f_person['id']
+                p.forecast_id = f_person['forecast_id']
             else:
                 # If orphan Person exists, update. Else, insert.
-                fp = Person.get(forecast_id=f_person['id'])
+                fp = Person.get(forecast_id=f_person['forecast_id'])
                 if fp:
                     fp.set(**f_person)
                 else:
-                    nfp = Person(forecast_id=f_person['id'],
+                    nfp = Person(forecast_id=f_person['forecast_id'],
                                  first_name=f_person['first_name'],
                                  last_name=f_person['last_name'],
                                  full_name=full_name,
@@ -118,6 +122,10 @@ class UberMunge(object):
 
     @db_session
     def munge_client(self):
+        """
+
+        :return:
+        """
         updated_since = self.client_last_updated
         harvest_clients = self.harv.get_harvest_clients(updated_since=updated_since)
         harvest_client_list = harvest_clients['clients']
@@ -143,8 +151,9 @@ class UberMunge(object):
                     pass
 
         # For each Client record, check if in db and update/insert accordingly
-        logger.start_load_msg('clients', harvest_client_list)
-        for client in harvest_client_list:
+        print('Loading Clients')
+        logger.print_progress_bar(iteration=0, total=len(harvest_client_list))
+        for idx, client in enumerate(harvest_client_list):
             harvest_id = client['harvest_id']
 
             # If a Client is in db update, otherwise insert
@@ -161,22 +170,27 @@ class UberMunge(object):
 
             # Commit the record
             db.commit()
+            logger.print_progress_bar(iteration=idx + 1, total=len(harvest_client_list))
 
         # Cycle through remaining Forecast clients to update forecast_id, if needed
         for f_client in forecast_clients_list:
+            is_active = not f_client.pop('archived')
+            f_client.update(is_active=is_active)
+            f_client.update(forecast_id=f_client.pop('id'))
+            f_client.update(updated_at=datetime.strptime(f_client['updated_at'], datetime_str_ms))
+
             if f_client['harvest_id']:
                 c = Client.get(harvest_id=f_client['harvest_id'])
-                c.forecast_id = f_client['id']
+                c.forecast_id = f_client['forecast_id']
             else:
-                fc =Client.get(forecast_id=f_client['id'])
+                fc =Client.get(forecast_id=f_client['forecast_id'])
                 # Update or insert the orphan Forecast client
                 if fc:
                     fc.set(**f_client)
                 else:
-                    nfc = Client(forecst_id=f_client['id'],
+                    nfc = Client(forecast_id=f_client['forecast_id'],
                             name=f_client['name'],
                             is_active=f_client['is_active'],
-                            created_at=f_client['created_at'],
                             updated_at=f_client['updated_at'])
 
     @db_session
@@ -191,8 +205,9 @@ class UberMunge(object):
         harvest_tasks = self.harv.get_harvest_tasks(updated_since=updated_since)
         harvest_tasks_list = harvest_tasks['tasks']
 
-        logger.start_load_msg('tasks', harvest_tasks_list)
-        for task in harvest_tasks_list:
+        print('Loading Tasks')
+        logger.print_progress_bar(iteration=0, total=len(harvest_tasks_list))
+        for idx, task in enumerate(harvest_tasks_list):
             t_id = task['id']
             dt_updated_at = datetime.strptime(task['updated_at'], datetime_string)
             task.update(updated_at=dt_updated_at)
@@ -205,12 +220,126 @@ class UberMunge(object):
 
             # Commit the record to the db
             db.commit()
+            logger.print_progress_bar(iteration=idx + 1, total=len(harvest_tasks_list))
+
+    @db_session
+    def munge_project(self):
+        updated_since = self.project_last_updated
+        harvest_projects = self.harv.get_harvest_projects(updated_since=updated_since)
+        harvest_projects_list = harvest_projects['projects']
+        forecast_projects = self.fore.get_forecast_projects()
+        forecast_projects_list = forecast_projects['projects']
+        # Trim Forecast list based on updated_since var
+        forecast_projects_list = self.__trim_forecast_results__(f_result_set=forecast_projects_list,
+                                                               trim_datetime=updated_since)
+
+        # Update Primary Key, get Forecast ID for each record
+        for h_proj in harvest_projects_list:
+            h_proj.update(harvest_id=h_proj.pop('id'))
+            h_proj.update(forecast_id=None)
+            # Convert the date keys into Python date objects so ORM can use them
+            h_proj.update(created_at=datetime.strptime(h_proj['created_at'], datetime_string))
+            h_proj.update(updated_at=datetime.strptime(h_proj['updated_at'], datetime_string))
+            if h_proj['starts_on']:
+                h_proj.update(starts_on=datetime.strptime(h_proj['starts_on'], date_string))
+            if h_proj['ends_on']:
+                h_proj.update(ends_on=datetime.strptime(h_proj['ends_on'], date_string))
+
+            # Get Data Warehouse id for Client
+            dw_client = self.__get_client_by_id__(h_proj['client_id'])
+            h_proj.update(client_id=dw_client.id)
+
+            # Get Forecast id
+            for idx, f_proj in enumerate(forecast_projects_list):
+                if h_proj['harvest_id'] == f_proj['harvest_id']:
+                    h_proj.update(forecast_id=f_proj['id'])
+                    harvest_projects_list.pop(idx)
+                else:
+                    pass
+
+        # For each Project record, check if in db and update/insert accordingly
+        print('Loading Projects')
+        logger.print_progress_bar(iteration=0, total=len(harvest_projects_list))
+        for idx, proj in enumerate(harvest_projects_list):
+            harvest_id = proj['harvest_id']
+
+            # If a Project is in db update, otherwise insert
+            pr = Project.get(harvest_id=harvest_id)
+            if pr:
+                pr.set(**proj)
+            else:
+                npr = Project(harvest_id=proj['harvest_id'],
+                              forecast_id=proj['forecast_id'],
+                              name=proj['name'],
+                              code=proj['code'],
+                              client_id=proj['client_id'],
+                              client_name=proj['client_name'],
+                              is_active=proj['is_active'],
+                              is_billable=proj['is_billable'],
+                              budget=proj['budget'],
+                              budget_is_monthly=proj['budget_is_monthly'],
+                              created_at=proj['created_at'],
+                              updated_at=proj['updated_at'],
+                              starts_on=proj['starts_on'],
+                              ends_on=proj['ends_on'],)
+            db.commit()
+            logger.print_progress_bar(iteration=idx + 1, total=len(harvest_projects_list))
+
+        # Cycle through remaining Forecast clients to update records
+        for f_proj in forecast_projects_list:
+            f_proj.update(forecast_id=f_proj.pop('id'))
+            f_proj.update(updated_at=datetime.strptime(f_proj['updated_at'], datetime_str_ms))
+            f_proj.update(starts_on=datetime.strptime(f_proj['starts_on'], date_string))
+            f_proj.update(ends_on=datetime.strptime(f_proj['ends_on'], date_string))
+
+            if f_proj['harvest_id']:
+                pr = Project.get(harvest_id=f_proj['harvest_id'])
+                pr.forecast_id = f_proj['forecast_id']
+            else:
+                # Get Data Warehouse id for Client
+                is_active = not f_proj.pop('archived')
+                dw_client = self.__get_client_by_id__(f_proj['client_id'])
+                f_proj.update(client_id=dw_client.id)
+                f_proj.update(client_name=dw_client.name)
+                f_proj.update(is_active=is_active)
+
+                # Update or insert the orphan Forecast client
+                fpr = Project.get(forecast_id=f_proj['forecast_id'])
+                if fpr:
+                    fpr.set(**f_proj)
+                else:
+                    nfpr = Project(forecast_id=f_proj['forecast_id'],
+                                   name=f_proj['name'],
+                                   code=f_proj['code'],
+                                   client_id=f_proj['client_id'],
+                                   client_name=f_proj['client_name'],
+                                   is_active=f_proj['is_active'],
+                                   updated_at=f_proj['updated_at'],
+                                   starts_on=f_proj['start_date'],
+                                   ends_on=f_proj['end_date'],)
+
+    def munge_assignment(self):
+        pass
 
     """
     Utility Methods
     
     These help keep code less repetitive
     """
+
+    def __get_client_by_id__(self, identifier):
+        """Search the client table for a matching Forecast or Harvest id and return the Data Warehouse object
+
+        :param identifier: int - Forecast or Harvest id
+        :return: full client record from db
+        """
+        client = Client.get(harvest_id=identifier)
+
+        if client:
+            pass
+        else:
+            client = Client.get(forecast_id=identifier)
+        return client
 
     def set_load_dates(self, is_full_load):
         """These dates determine the payload size of the calls made to Harvest and Forecast APIs
@@ -360,7 +489,6 @@ class Munger(object):
         Pulls both Harvest and Forecast project list so the two can be combined into one entity in data warehouse
         Also re-writes the primary keys to match data warehouse rather than the APIs
         """
-
         harvest_projects = self.harv.get_harvest_projects(updated_since=self.project_last_updated)
         forecast_projects = self.fore.get_forecast_projects()
         # Replace the full Forecast list with a trimmed one based on updated_at date

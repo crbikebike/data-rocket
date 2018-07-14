@@ -4,7 +4,9 @@ Some simple functions that don't have a more natural home
 from controllers.ormcontroller import write_rocket_log
 from datetime import datetime
 datetime_string = '%Y-%m-%dT%H:%M:%SZ'
+datetime_str_ms= '%Y-%m-%dT%H:%M:%S.%fZ'
 date_string = '%Y-%m-%d'
+from sys import stdout
 
 class LoggerBot(object):
     """
@@ -30,6 +32,30 @@ class LoggerBot(object):
         success = self.load_success
 
         write_rocket_log(description=description, timestamp=now, success=success, documents=docs)
+
+    def print_progress_bar(self, iteration, total, prefix='Progress:', suffix='Complete'
+                           , decimals=1, length=100):
+        """Call in a loop to create terminal progress bar
+
+        @params:
+            iteration   - Required  : current iteration (Int)
+            total       - Required  : total iterations (Int)
+            prefix      - Optional  : prefix string (Str)
+            suffix      - Optional  : suffix string (Str)
+            decimals    - Optional  : positive number of decimals in percent complete (Int)
+            length      - Optional  : character length of bar (Int)
+            fill        - Optional  : bar fill character (Str)
+        """
+        if total > 0:
+            percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+            filledLength = int(length * iteration // total)
+            bar = '.' * filledLength + '-' * (length - filledLength)
+            stdout.write('\r{} |{}| {}% {}'.format(prefix, bar, percent, suffix))
+            # Print New Line on Complete
+            if iteration == total:
+                stdout.write('\nAll Done\n')
+        else:
+            print("No records to process")
 
 
 def process_args(argv):

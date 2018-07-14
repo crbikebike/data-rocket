@@ -55,10 +55,8 @@ class PusherBot(object):
             self.uber.munge_task()
 
         if projects or full_load:
-            self.munged_projects = self.mungy.munge_project_list()
-            print('Inserting Project DB records')
-            self.project_list = self.munged_projects['projects']
-            insert_projects_list(self.project_list)
+            print('Pushing Project Records')
+            self.uber.munge_project()
 
         if assignments or full_load:
             self.assignments_list = self.mungy.munge_forecast_assignments()

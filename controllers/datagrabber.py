@@ -283,7 +283,7 @@ class Forecaster(object):
         print('Getting Forecast Projects')
         api_url = 'projects'
         filters = ['id', 'name', 'code', 'start_date', 'end_date', 'harvest_id', 'client_id',
-                   'updated_at']
+                   'updated_at', 'archived']
         projects_json_result = self.__get_api_data__(api_url)
 
         for project in projects_json_result['projects']:
@@ -321,7 +321,7 @@ class Forecaster(object):
     def get_forecast_clients(self):
         print('Getting Forecast Clients')
         api_url = 'clients'
-        filters = ['id', 'name', 'harvest_id', 'updated_at']
+        filters = ['id', 'name', 'harvest_id', 'updated_at', 'archived']
         client_json_result = self.__get_api_data__(api_url)
 
         for client in client_json_result['clients']:
