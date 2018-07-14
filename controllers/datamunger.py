@@ -60,8 +60,10 @@ class UberMunge(object):
                 if h_person['harvest_id'] == f_person['harvest_id']:
                     h_person.update(forecast_id=f_person['id'])
                     forecast_people_list.pop(idx)
+                else:
+                    pass
 
-        # For each complete Person record, check if in db and then insert/update accordingly
+        # For each Person record, check if in db and then insert/update accordingly
         logger.start_load_msg('people', harvest_people_list)
         for person in harvest_people_list:
             harvest_id = person['harvest_id']
@@ -81,11 +83,13 @@ class UberMunge(object):
                             timezone=person['timezone'],
                             weekly_capacity=person['weekly_capacity'],
                             is_contractor=person['is_contractor'],
-                            is_active=person['is_contractor'],
+                            is_active=person['is_active'],
                             roles=person['roles'],
                             avatar_url=person['avatar_url'],
                             created_at=person['created_at'],
                             updated_at=person['updated_at'])
+            # Commit the record
+            db.commit()
 
         # Cycle through remaining Forecast people to update forecast_id, if needed
         for f_person in forecast_people_list:
@@ -97,7 +101,57 @@ class UberMunge(object):
 
     @db_session
     def munge_client(self):
-        pass
+        updated_since = self.client_last_updated
+        harvest_clients = self.harv.get_harvest_clients(updated_since=updated_since)
+        harvest_client_list = harvest_clients['clients']
+        forecast_clients = self.fore.get_forecast_clients()
+        forecast_clients_list = forecast_clients['clients']
+        # Trim Forecast list based on updated_since var
+        forecast_clients_list = self.__trim_forecast_results__(f_result_set=forecast_clients_list,
+                                                               trim_datetime=updated_since)
+
+        # Update Primary Key, get Forecast ID for each record
+        for h_client in harvest_client_list:
+            h_client.update(harvest_id=h_client.pop('id'))
+            h_client.update(forecast_id=None)
+            # Convert the date keys into Python date objects so ORM can use them
+            h_client.update(created_at=datetime.strptime(h_client['created_at'], datetime_string))
+            h_client.update(updated_at=datetime.strptime(h_client['updated_at'], datetime_string))
+
+            for idx, f_client in enumerate(forecast_clients_list):
+                if h_client['harvest_id'] == f_client['harvest_id']:
+                    h_client.update(forecast_id=f_client['id'])
+                    forecast_clients_list.pop(idx)
+                else:
+                    pass
+
+        # For each Client record, check if in db and update/insert accordingly
+        logger.start_load_msg('clients', harvest_client_list)
+        for client in harvest_client_list:
+            harvest_id = client['harvest_id']
+
+            # If a Client is in db update, otherwise insert
+            c = Client.get(harvest_id=harvest_id)
+            if c:
+                c.set(**client)
+            else:
+                nc = Client(harvest_id=harvest_id,
+                            forecast_id=client['forecast_id'],
+                            name=client['name'],
+                            is_active=client['is_active'],
+                            created_at=client['created_at'],
+                            updated_at=client['updated_at'])
+
+            # Commit the record
+            db.commit()
+
+        # Cycle through remaining Forecast clients to update forecast_id, if needed
+        for f_client in forecast_clients_list:
+            if f_client['harvest_id']:
+                c = Client.get(harvest_id=f_client['harvest_id'])
+                c.forecast_id = f_client['id']
+            else:
+                pass
 
     @db_session
     def munge_task(self):
@@ -124,7 +178,7 @@ class UberMunge(object):
                 t = Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
 
             # Commit the record to the db
-            commit()
+            db.commit()
 
     """
     Utility Methods

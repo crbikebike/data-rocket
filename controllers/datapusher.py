@@ -3,6 +3,7 @@
 ## Imports
 from controllers.ormcontroller import *
 from controllers.datamunger import Munger, UberMunge
+from controllers.utilitybot import logger
 
 """
 ### Needed Functions ###
@@ -28,8 +29,8 @@ class PusherBot(object):
 
         if full_load:
             # If full load, drop all and create
-            db.drop_all_tables(with_all_data=True)
-            db.create_tables()
+            #db.drop_all_tables(with_all_data=True)
+            #db.create_tables()
             self.mungy.set_load_dates(is_full_load=True)
             self.uber.set_load_dates(is_full_load=True)
         else:
@@ -46,10 +47,8 @@ class PusherBot(object):
             self.uber.munge_person()
 
         if clients or full_load:
-            self.munged_clients = self.mungy.munge_client_list()
-            print('Inserting Client DB records')
-            self.client_list = self.munged_clients['clients']
-            insert_clients_list(self.client_list)
+            print('Pushing Client Records')
+            self.uber.munge_client()
 
         if tasks or full_load:
             print('Pushing Task Records')
