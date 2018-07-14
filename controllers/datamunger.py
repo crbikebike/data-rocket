@@ -19,10 +19,6 @@ class UberMunge(object):
     It is replacing the Munger class, which has proven buggy in diff loads and is overly complicated.  The general principle
     of UberMunge is to push data to the db immediately after transformation as an insert or update rather than load in a
     bulk transaction after all records are transformed.
-
-    Todos:
-        Split getting last-date-updated or full-load dates from the grouped function and have each munge grab its own
-        last-date-updated individually
     """
     def __init__(self, is_test=False):
         self.harv = Harvester(is_test=is_test)
@@ -45,7 +41,52 @@ class UberMunge(object):
         :return:
         None
         """
-        pass
+        # Get Harvest and Forecast people
+        updated_since = self.person_last_updated
+        harvest_people = self.harv.get_harvest_users(updated_since=updated_since)
+        harvest_people_list = harvest_people['users']
+        forecast_people = self.fore.get_forecast_people()
+        forecast_people_list = forecast_people['people']
+        # Trim the Forecast list to the updated_date
+        forecast_people_list = self.__trim_forecast_results__(f_result_set=forecast_people_list,
+                                                              trim_datetime=updated_since)
+
+        # Update Primary Key, Get Forecast id for each person
+        for h_person in harvest_people_list:
+            h_person.update(harvest_id=h_person.pop('id'))
+            h_person.update(forecast_id=None)
+            # Convert the datetime strings into python datetime objects so the ORM can use them
+            h_person.update(created_at=datetime.strptime(h_person['created_at'], self.datetime_string))
+            h_person.update(updated_at=datetime.strptime(h_person['updated_at'], self.datetime_string))
+
+            for f_person in forecast_people_list:
+                if h_person['harvest_id'] == f_person['harvest_id']:
+                    h_person.update(forecast_id=f_person['id'])
+
+        # For each complete Person record, check if in db and then insert/update accordingly
+        for person in harvest_people_list:
+            harvest_id = person['harvest_id']
+            full_name = "{fn} {ln}".format(fn=person['first_name'], ln=person['last_name'])
+
+            # If a Person is in db update, otherwise insert
+            p = Person.get(harvest_id=harvest_id)
+            if p:
+                p.set(**person)
+            else:
+                np = Person(harvest_id=harvest_id,
+                            forecast_id=person['forecast_id'],
+                            first_name=person['first_name'],
+                            last_name=person['last_name'],
+                            full_name=full_name,
+                            email=person['email'],
+                            timezone=person['timezone'],
+                            weekly_capacity=person['weekly_capacity'],
+                            is_contractor=person['is_contractor'],
+                            is_active=person['is_contractor'],
+                            roles=person['roles'],
+                            avatar_url=person['avatar_url'],
+                            created_at=person['created_at'],
+                            updated_at=person['updated_at'])
 
     @db_session
     def munge_task(self):
@@ -54,9 +95,9 @@ class UberMunge(object):
         :return:
         None
         """
-
+        updated_since = self.task_last_updated
         # Get the Harvest Tasks List from its API
-        harvest_tasks = self.harv.get_harvest_tasks(updated_since=self.task_last_updated)
+        harvest_tasks = self.harv.get_harvest_tasks(updated_since=updated_since)
         harvest_tasks_list = harvest_tasks['tasks']
 
         for task in harvest_tasks_list:
@@ -104,6 +145,18 @@ class UberMunge(object):
             self.task_last_updated = self.last_updated_dict['task'].strftime(self.datetime_string)
             self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(self.datetime_string)
 
+    def __trim_forecast_results__(self, f_result_set, trim_datetime):
+        """This will trip the result set down to the updated_since date
+
+        :returns list with dictionary entries that have an updated_at date greater than trim_datetime
+        """
+        for idx, f_obj in enumerate(f_result_set):
+            if f_obj['updated_at'] <= trim_datetime:
+                f_result_set.pop(idx)
+            else:
+                pass
+        return f_result_set
+
 
 class Munger(object):
     """This class will transform the Harvest and Forecast Data into records for the Data Warehouse
@@ -130,7 +183,6 @@ class Munger(object):
         """This will pull the Harvest and Forecast user/people lists and combine them into one entry
 
         """
-
         harvest_people = self.harv.get_harvest_users(updated_since=self.person_last_updated)
         harvest_people['people'] = harvest_people.pop('users')
         forecast_people = self.fore.get_forecast_people()
