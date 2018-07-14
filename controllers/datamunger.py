@@ -93,11 +93,28 @@ class UberMunge(object):
 
         # Cycle through remaining Forecast people to update forecast_id, if needed
         for f_person in forecast_people_list:
+            full_name = "{fn} {ln}".format(fn=f_person['first_name'], ln=f_person['last_name'])
+            is_active = not f_person.pop('archived')
+            f_person.update(is_active=is_active)
+
             if f_person['harvest_id']:
                 p = Person.get(harvest_id=f_person['harvest_id'])
                 p.forecast_id = f_person['id']
             else:
-                pass
+                # If orphan Person exists, update. Else, insert.
+                fp = Person.get(forecast_id=f_person['id'])
+                if fp:
+                    fp.set(**f_person)
+                else:
+                    nfp = Person(forecast_id=f_person['id'],
+                                 first_name=f_person['first_name'],
+                                 last_name=f_person['last_name'],
+                                 full_name=full_name,
+                                 email=person['email'],
+                                 is_active=f_person['is_active'],
+                                 updated_at=person['updated_at'])
+            # Commit the records
+            db.commit()
 
     @db_session
     def munge_client(self):
@@ -151,7 +168,16 @@ class UberMunge(object):
                 c = Client.get(harvest_id=f_client['harvest_id'])
                 c.forecast_id = f_client['id']
             else:
-                pass
+                fc =Client.get(forecast_id=f_client['id'])
+                # Update or insert the orphan Forecast client
+                if fc:
+                    fc.set(**f_client)
+                else:
+                    nfc = Client(forecst_id=f_client['id'],
+                            name=f_client['name'],
+                            is_active=f_client['is_active'],
+                            created_at=f_client['created_at'],
+                            updated_at=f_client['updated_at'])
 
     @db_session
     def munge_task(self):

@@ -296,7 +296,7 @@ class Forecaster(object):
     def get_forecast_people(self):
         print('Getting Forecast People')
         api_url = 'people'
-        filters = ['id','harvest_user_id','first_name', 'last_name', 'email', 'updated_at']
+        filters = ['id','harvest_user_id','first_name', 'last_name', 'email', 'updated_at', 'archived']
         people_json_result = self.__get_api_data__(api_url)
 
         for person in people_json_result['people']:
