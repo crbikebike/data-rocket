@@ -64,7 +64,7 @@ class UberMunge(object):
                     pass
 
         # For each Person record, check if in db and then insert/update accordingly
-        print('Loading People:')
+        print('Writing People:')
         logger.print_progress_bar(iteration=0, total=len(harvest_people_list))
         for idx, person in enumerate(harvest_people_list):
             harvest_id = person['harvest_id']
@@ -151,7 +151,7 @@ class UberMunge(object):
                     pass
 
         # For each Client record, check if in db and update/insert accordingly
-        print('Loading Clients')
+        print('Writing Clients')
         logger.print_progress_bar(iteration=0, total=len(harvest_client_list))
         for idx, client in enumerate(harvest_client_list):
             harvest_id = client['harvest_id']
@@ -205,7 +205,7 @@ class UberMunge(object):
         harvest_tasks = self.harv.get_harvest_tasks(updated_since=updated_since)
         harvest_tasks_list = harvest_tasks['tasks']
 
-        print('Loading Tasks')
+        print('Writing Tasks')
         logger.print_progress_bar(iteration=0, total=len(harvest_tasks_list))
         for idx, task in enumerate(harvest_tasks_list):
             t_id = task['id']
@@ -246,22 +246,25 @@ class UberMunge(object):
                 h_proj.update(ends_on=datetime.strptime(h_proj['ends_on'], date_string))
 
             # Get Data Warehouse id for Client
-            dw_client = self.__get_client_by_id__(h_proj['client_id'])
+            dw_client = get_client_by_id(identifier=h_proj['client_id'])
             h_proj.update(client_id=dw_client.id)
 
             # Get Forecast id
             for idx, f_proj in enumerate(forecast_projects_list):
                 if h_proj['harvest_id'] == f_proj['harvest_id']:
                     h_proj.update(forecast_id=f_proj['id'])
-                    harvest_projects_list.pop(idx)
+                    forecast_projects_list.pop(idx)
                 else:
                     pass
 
         # For each Project record, check if in db and update/insert accordingly
-        print('Loading Projects')
+        print('Writing Projects')
         logger.print_progress_bar(iteration=0, total=len(harvest_projects_list))
         for idx, proj in enumerate(harvest_projects_list):
-            harvest_id = proj['harvest_id']
+            try:
+                harvest_id = proj['harvest_id']
+            except Exception as e:
+                pass
 
             # If a Project is in db update, otherwise insert
             pr = Project.get(harvest_id=harvest_id)
@@ -289,8 +292,10 @@ class UberMunge(object):
         for f_proj in forecast_projects_list:
             f_proj.update(forecast_id=f_proj.pop('id'))
             f_proj.update(updated_at=datetime.strptime(f_proj['updated_at'], datetime_str_ms))
-            f_proj.update(starts_on=datetime.strptime(f_proj['starts_on'], date_string))
-            f_proj.update(ends_on=datetime.strptime(f_proj['ends_on'], date_string))
+            if f_proj['starts_on']:
+                f_proj.update(starts_on=datetime.strptime(f_proj['starts_on'], date_string))
+            if f_proj['ends_on']:
+                f_proj.update(ends_on=datetime.strptime(f_proj['ends_on'], date_string))
 
             if f_proj['harvest_id']:
                 pr = Project.get(harvest_id=f_proj['harvest_id'])
@@ -298,7 +303,7 @@ class UberMunge(object):
             else:
                 # Get Data Warehouse id for Client
                 is_active = not f_proj.pop('archived')
-                dw_client = self.__get_client_by_id__(f_proj['client_id'])
+                dw_client = get_client_by_id(f_proj['client_id'])
                 f_proj.update(client_id=dw_client.id)
                 f_proj.update(client_name=dw_client.name)
                 f_proj.update(is_active=is_active)
@@ -319,6 +324,13 @@ class UberMunge(object):
                                    ends_on=f_proj['end_date'],)
 
     def munge_assignment(self):
+        """Converts Forecast API into data warehouse friendly data
+
+        Forecast API is very different than Harvest, so requires quite a bit of munging.
+        Takes the date range from the Forecast entry and splits it into individual business day entries
+        Calculates the hours/day for each assignment (source shows in seconds)
+        Replaces API identity values with data warehouse ones
+        """
         pass
 
     """
@@ -326,20 +338,6 @@ class UberMunge(object):
     
     These help keep code less repetitive
     """
-
-    def __get_client_by_id__(self, identifier):
-        """Search the client table for a matching Forecast or Harvest id and return the Data Warehouse object
-
-        :param identifier: int - Forecast or Harvest id
-        :return: full client record from db
-        """
-        client = Client.get(harvest_id=identifier)
-
-        if client:
-            pass
-        else:
-            client = Client.get(forecast_id=identifier)
-        return client
 
     def set_load_dates(self, is_full_load):
         """These dates determine the payload size of the calls made to Harvest and Forecast APIs
@@ -533,7 +531,7 @@ class Munger(object):
                 # Get the Forecast information for each orphan, prepare for entry into the main dict
                 o.update(forecast_id=o.pop('id'))
                 if o['client_id']: # If there is a client ID, update and append
-                    dw_client = get_client_by_forecast_id(o['client_id'])
+                    dw_client = get_client_by_id(o['client_id'])
                     o.update(client_id=dw_client.id)
                     o.update(client_name=dw_client.name)
                 else: # It's the Time Off Project, assign to RevUnit as Client ID and Name

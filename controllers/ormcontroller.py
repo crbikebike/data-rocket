@@ -180,14 +180,18 @@ def get_project_table():
 
 
 @db_session
-def get_project_by_harvest_id(harvest_id):
-    project = Project.get(harvest_id=harvest_id)
-    return project
+def get_project_by_id(identifier):
+    """Search the project table for a matching Forecast or Harvest id and return the Data Warehouse object
 
+    :param identifier: int - Forecast or Harvest id
+    :return: full client record from db
+    """
+    project = Project.get(harvest_id=identifier)
 
-@db_session
-def get_project_by_forecast_id(forecast_id):
-    project = Project.get(forecast_id=forecast_id)
+    if project:
+        pass
+    else:
+        project = Project.get(forecast_id=identifier)
     return project
 
 
@@ -198,13 +202,17 @@ def get_client_table():
 
 
 @db_session
-def get_client_by_harvest_id(harvest_id):
-    client = Client.get(harvest_id=harvest_id)
-    return client
+def get_client_by_id(identifier):
+    """Search the client table for a matching Forecast or Harvest id and return the Data Warehouse object
 
-@db_session
-def get_client_by_forecast_id(forecast_id):
-    client = Client.get(forecast_id=forecast_id)
+    :param identifier: int - Forecast or Harvest id
+    :return: full client record from db
+    """
+    client = Client.get(harvest_id=identifier)
+    if client:
+        pass
+    else:
+        client = Client.get(forecast_id=identifier)
     return client
 
 

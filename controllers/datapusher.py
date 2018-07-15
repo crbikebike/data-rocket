@@ -43,19 +43,15 @@ class PusherBot(object):
         """
         
         if people or full_load:
-            print('Pushing People Records')
             self.uber.munge_person()
 
         if clients or full_load:
-            print('Pushing Client Records')
             self.uber.munge_client()
 
         if tasks or full_load:
-            print('Pushing Task Records')
             self.uber.munge_task()
 
         if projects or full_load:
-            print('Pushing Project Records')
             self.uber.munge_project()
 
         if assignments or full_load:
