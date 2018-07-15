@@ -2,7 +2,7 @@
 
 ## Imports
 from controllers.ormcontroller import *
-from controllers.datamunger import Munger, UberMunge
+from controllers.datamunger import UberMunge
 from controllers.utilitybot import logger
 
 """
@@ -21,7 +21,6 @@ Use the Harvest Param to only pull since last update, only pull things after tha
 class PusherBot(object):
     # This class handles collating and pushing clean data to the DB
     def __init__(self, is_test=False):
-        self.mungy = Munger(is_test=is_test)
         self.uber = UberMunge(is_test=is_test)
 
     def load_data(self, full_load=False, people=False, clients=False, tasks=False, projects=False, assignments=False,
@@ -31,11 +30,9 @@ class PusherBot(object):
             # If full load, drop all and create
             #db.drop_all_tables(with_all_data=True)
             #db.create_tables()
-            self.mungy.set_load_dates(is_full_load=True)
             self.uber.set_load_dates(is_full_load=True)
         else:
             # If differential, don't drop tables and use the updated_from dates
-            self.mungy.set_load_dates(is_full_load=False)
             self.uber.set_load_dates(is_full_load=False)
 
         """

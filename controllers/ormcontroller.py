@@ -167,7 +167,8 @@ def get_updated_from_dates():
     mc = max(cli.updated_at for cli in Client)
     mtsk = max(tsk.updated_at for tsk in Task)
     mte = max(te.updated_at for te in Time_Entry)
-    return {'person': mp, 'project': mpr, 'client': mc, 'task': mtsk, 'time_entry': mte}
+    mta = max(ta.updated_at for ta in Time_Assignment)
+    return {'person': mp, 'project': mpr, 'client': mc, 'task': mtsk, 'time_entry': mte, 'time_assignment': mta}
 
 
 """
