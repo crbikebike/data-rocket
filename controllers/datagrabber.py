@@ -9,6 +9,7 @@ from collections import deque
 from datetime import datetime, timedelta
 import calendar
 from data_rocket_conf import config as conf
+from controllers.utilitybot import logger
 
 
 # Variables
@@ -106,21 +107,25 @@ class Harvester(object):
         # Get page numbers, build queue
         page_qty = api_json_result['total_pages']
         page_queue = deque(range(1, (page_qty + 1)))
+        total_pages = api_json_result['total_pages']
+        total_entries = api_json_result['total_entries']
 
         # Process the queue until empty
         api_list = []
         id_list = [] # Keep track of ids added to list to prevent inserting multiple of the same record
         api_json_result.update(id_list=id_list)
 
-        print('Starting {} Harvest Pull'.format(root_key.capitalize()))
+        print('Starting {name} Harvest Pull ({entries} Entries, {pages} Pages)'.format(name=root_key.capitalize(),
+                                                                                       entries=total_entries,
+                                                                                       pages=total_pages))
         while len(page_queue) > 0:
             page_num = page_queue.popleft()
             api_params.update(page=page_num)
             # Request api load for the current page
             page_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
             api_entities = page_json_result[root_key]
-            print(
-                'Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
+            # print(
+            #     'Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
 
             # If there are keys to filter, do that. Otherwise just add the entire resposne to the api_list
             for entity in api_entities:
@@ -132,6 +137,8 @@ class Harvester(object):
                     id_list.append(flat_entity['id'])
                 else:
                     pass
+
+            logger.print_progress_bar(iteration=page_json_result['page'], total=total_pages)
 
         # Replace the endpoint data with our updated info
         api_json_result.update({root_key: api_list})
@@ -212,6 +219,7 @@ class Forecaster(object):
         self.forecast_headers.update({'User-Agent': user_agent})
         self.forecast_params = {}
         self.date_string = '%Y-%m-%d'
+        self.is_test = is_test
 
     """
     Utility Methods
@@ -255,12 +263,19 @@ class Forecaster(object):
         Gets the first date of the previous month and last day of 3 months from now
         This is used to see how much Forecast history and future to pull
         """
+        if self.is_test:
+            past_dates = 2
+            future_dates = 3
+        else:
+            past_dates = 30
+            future_dates = 90
+
         now = datetime.now()
         # Get the first date of the past month
-        time_machine = now - timedelta(days=30)
+        time_machine = now - timedelta(days=past_dates)
         look_behind = time_machine.strftime('%Y-%m-01')
         # Get the last date of 6-ish months from now
-        future_machine = now + timedelta(days=90)
+        future_machine = now + timedelta(days=future_dates)
         eom = calendar.monthrange(future_machine.year, future_machine.month)[1]
         look_ahead = future_machine.strftime('%Y-%m-{d}'.format(d=eom))
 
@@ -275,7 +290,7 @@ class Forecaster(object):
         print('Getting Forecast Projects')
         api_url = 'projects'
         filters = ['id', 'name', 'code', 'start_date', 'end_date', 'harvest_id', 'client_id',
-                   'updated_at']
+                   'updated_at', 'archived']
         projects_json_result = self.__get_api_data__(api_url)
 
         for project in projects_json_result['projects']:
@@ -288,7 +303,7 @@ class Forecaster(object):
     def get_forecast_people(self):
         print('Getting Forecast People')
         api_url = 'people'
-        filters = ['id','harvest_user_id','first_name', 'last_name', 'email', 'updated_at']
+        filters = ['id','harvest_user_id','first_name', 'last_name', 'email', 'updated_at', 'archived']
         people_json_result = self.__get_api_data__(api_url)
 
         for person in people_json_result['people']:
@@ -313,7 +328,7 @@ class Forecaster(object):
     def get_forecast_clients(self):
         print('Getting Forecast Clients')
         api_url = 'clients'
-        filters = ['id', 'name', 'harvest_id', 'updated_at']
+        filters = ['id', 'name', 'harvest_id', 'updated_at', 'archived']
         client_json_result = self.__get_api_data__(api_url)
 
         for client in client_json_result['clients']:

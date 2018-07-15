@@ -1,7 +1,7 @@
 ### All environment vars are defined in Heroku
 import os
 
-config = {'DEBUG': False,
+config = {'DEBUG': os.environ.get('DEBUG'),
           'DB_CONN': os.environ.get('DB_CONN'),
           'HARVEST_AUTH': os.environ.get('HARVEST_AUTH'),
           'FORECAST_ACCOUNT_ID': os.environ.get('FORECAST_ACCOUNT_ID'),

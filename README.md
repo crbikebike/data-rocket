@@ -6,9 +6,7 @@ Welcome!  This project aims to automatically push all of RevUnit's separate data
 
 It is a Python3 app and pushes to a PostgreSQL database.
 
-Please consult Chris Race before changing database fields and formatting.  This data powers several dashboards that are dependent on the current schema.
-
-The largest needs right now are enhancing the data pull process, testing coverage, logging, and error handling.  All the fun stuff.
+Check out the issues list for a view in what the app needs and submit a PR :)
 
 ## Build Setup
 
@@ -79,4 +77,4 @@ Performs all data manipulation and transformation needed prior to database inser
 
 **datapusher.py**
 
-Currently not doing anything.  Ideally will clean up clutter on main.py in future builds
+Kicks off the munging tasks in the needed order to avoid foreign key constraints

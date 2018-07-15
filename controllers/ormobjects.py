@@ -23,8 +23,8 @@ class Person(db.Entity):
     first_name = Optional(str)
     last_name = Optional(str)
     full_name = Optional(str, nullable=True)
-    weekly_goal = Optional(Decimal)
-    yearly_goal = Optional(int)
+    weekly_goal = Optional(Decimal, nullable=True)
+    yearly_goal = Optional(int, nullable=True)
     time_entries = Set('Time_Entry')
     email = Optional(str, nullable=True)
     timezone = Optional(str, nullable=True)
@@ -101,10 +101,11 @@ class Time_Assignment(db.Entity):
     id = PrimaryKey(int, auto=True)
     parent_id = Optional(int)
     person_id = Required(Person)
+    project_id = Required(Project)
     assign_date = Optional(date)
     allocation = Optional(Decimal)
     updated_at = Optional(datetime)
-    project_id = Required(Project)
+
 
 
 class Harvest_Entries(db.Entity):
