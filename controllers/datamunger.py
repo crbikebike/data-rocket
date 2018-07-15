@@ -127,7 +127,7 @@ class UberMunge(object):
                     logger.write_load_completion(documents=str(e), description=desc)
             # Commit the records
             db.commit()
-            
+
     @db_session
     def munge_client(self):
         """Pulls Harvest and Forecast Clients and inserts/updates records
