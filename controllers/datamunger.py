@@ -330,14 +330,16 @@ class UberMunge(object):
             else:
                 # If it doesn't have a harvest id, transform data and insert/update data warehouse
                 is_active = not f_proj.pop('archived')
-                dw_client = get_client_by_id(f_proj['client_id'])
-                # If no result is returned, set client to RevUnit
-                if dw_client:
+                f_proj.update(is_active=is_active)
+
+                # Check for a client ID. If no result is returned, set client to RevUnit
+                if f_proj['client_id']:
+                    dw_client = get_client_by_id(f_proj['client_id'])
                     f_proj.update(client_id=dw_client.id)
+                    f_proj.update(client_name=dw_client.name)
                 else:
                     f_proj.update(client_id=164)
-                f_proj.update(client_name=dw_client.name)
-                f_proj.update(is_active=is_active)
+                    f_proj.update(client_name='RevUnit')
 
                 # Update or insert the orphan Forecast client
                 try:
