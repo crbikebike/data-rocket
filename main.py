@@ -17,7 +17,7 @@ if __name__ == '__main__':
     pb = PusherBot(is_test=drc['DEBUG'])
 
     # Load all data flagged as true and push to db
-    pb.load_data(full_load=config['full_load'], people=config['people'], clients=config['clients'],
+    pb.load_data(full_load=config['full_load'], all_tables=config['all_tables'], people=config['people'], clients=config['clients'],
                  tasks=config['tasks'], projects=config['projects'], assignments=config['assignments'],
                  time_entries=['time_entries'])
 

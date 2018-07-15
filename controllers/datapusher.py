@@ -23,7 +23,7 @@ class PusherBot(object):
     def __init__(self, is_test=False):
         self.uber = UberMunge(is_test=is_test)
 
-    def load_data(self, full_load=False, people=False, clients=False, tasks=False, projects=False, assignments=False,
+    def load_data(self, full_load=False, all_tables=False, people=False, clients=False, tasks=False, projects=False, assignments=False,
                   time_entries=False):
 
         if full_load:
@@ -38,21 +38,21 @@ class PusherBot(object):
         """
         For each flag, check if enabled and then process if true
         """
-        
-        if people or full_load:
+
+        if people or all_tables:
             self.uber.munge_person()
 
-        if clients or full_load:
+        if clients or all_tables:
             self.uber.munge_client()
 
-        if tasks or full_load:
+        if tasks or all_tables:
             self.uber.munge_task()
 
-        if projects or full_load:
+        if projects or all_tables:
             self.uber.munge_project()
 
-        if assignments or full_load:
+        if assignments or all_tables:
             self.uber.munge_assignment()
 
-        if time_entries or full_load:
+        if time_entries or all_tables:
             self.uber.munge_time_entries()

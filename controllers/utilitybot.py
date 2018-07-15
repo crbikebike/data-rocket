@@ -61,6 +61,7 @@ def process_args(argv):
     Processes arguments sent with command line start and returns dict with config info
     """
     config = {'full_load': False,
+              'all_tables': False,
               'people': False,
               'clients': False,
               'tasks': False,
@@ -68,7 +69,7 @@ def process_args(argv):
               'assignments': False,
               'time_entries': False,}
 
-    load_list = ['full_load', 'people', 'clients', 'tasks', 'projects', 'assignments', 'time_entries']
+    load_list = ['full_load', 'all_tables', 'people', 'clients', 'tasks', 'projects', 'assignments', 'time_entries']
 
     if len(argv) > 1:
         args = argv[1:]
