@@ -343,6 +343,8 @@ class UberMunge(object):
             id = assn.pop('id')
             start_date = assn.pop('start_date')
             end_date = assn.pop('end_date')
+            updated_at = assn.pop('updated_at')
+            updated_at = datetime.strptime(updated_at, date_string)
 
             # Convert Allocation to hours from seconds
             allocation = assn.pop('allocation')/3600
@@ -358,7 +360,27 @@ class UberMunge(object):
 
             # Check if records exist already with our parent id, delete if so
             a_recs = get_assignments_by_parent(parent_id=id)
-            print(a_recs)
+            for rec in a_recs:
+                Time_Assignment[rec.id].delete()
+            db.commit()
+
+            # For each business day in the assignment, make a new split entry
+            for day in dates:
+                if is_busday(day):
+                    split_assn = assn.copy()
+                    split_assn.update(parent_id=id)
+                    split_assn.update(assign_date=(day).strftime(date_string))
+                    split_assn.update(allocation=allocation)
+
+                    # Insert the Time Assignment record
+                    ta = Time_Assignment(parent_id=id,
+                                         person_id=assn['person_id'],
+                                         project_id=assn['project_id'],
+                                         assign_date=day,
+                                         allocation=allocation,
+                                         updated_at=updated_at)
+                else:
+                    pass
 
 
     """

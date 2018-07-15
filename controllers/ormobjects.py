@@ -101,10 +101,11 @@ class Time_Assignment(db.Entity):
     id = PrimaryKey(int, auto=True)
     parent_id = Optional(int)
     person_id = Required(Person)
+    project_id = Required(Project)
     assign_date = Optional(date)
     allocation = Optional(Decimal)
     updated_at = Optional(datetime)
-    project_id = Required(Project)
+
 
 
 class Harvest_Entries(db.Entity):
