@@ -9,6 +9,7 @@ from collections import deque
 from datetime import datetime, timedelta
 import calendar
 from data_rocket_conf import config as conf
+from controllers.utilitybot import logger
 
 
 # Variables
@@ -106,21 +107,25 @@ class Harvester(object):
         # Get page numbers, build queue
         page_qty = api_json_result['total_pages']
         page_queue = deque(range(1, (page_qty + 1)))
+        total_pages = api_json_result['total_pages']
+        total_entries = api_json_result['total_entries']
 
         # Process the queue until empty
         api_list = []
         id_list = [] # Keep track of ids added to list to prevent inserting multiple of the same record
         api_json_result.update(id_list=id_list)
 
-        print('Starting {} Harvest Pull'.format(root_key.capitalize()))
+        print('Starting {name} Harvest Pull ({entries} Entries, {pages} Pages)'.format(name=root_key.capitalize(),
+                                                                                       entries=total_entries,
+                                                                                       pages=total_pages))
         while len(page_queue) > 0:
             page_num = page_queue.popleft()
             api_params.update(page=page_num)
             # Request api load for the current page
             page_json_result = self.__get_request__(api_url=root_key, extra_params=api_params)
             api_entities = page_json_result[root_key]
-            print(
-                'Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
+            # print(
+            #     'Processing Page: ' + str(page_json_result['page']) + ' out of ' + str(page_json_result['total_pages']))
 
             # If there are keys to filter, do that. Otherwise just add the entire resposne to the api_list
             for entity in api_entities:
@@ -132,6 +137,8 @@ class Harvester(object):
                     id_list.append(flat_entity['id'])
                 else:
                     pass
+
+            logger.print_progress_bar(iteration=page_json_result['page'], total=total_pages)
 
         # Replace the endpoint data with our updated info
         api_json_result.update({root_key: api_list})

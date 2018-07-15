@@ -291,7 +291,7 @@ class UberMunge(object):
             db.commit()
             logger.print_progress_bar(iteration=idx + 1, total=len(harvest_projects_list))
 
-        # Cycle through remaining Forecast clients to update records
+        # Cycle through remaining Forecast Projects to update records
         for f_proj in forecast_projects_list:
             f_proj.update(forecast_id=f_proj.pop('id'))
             f_proj.update(updated_at=datetime.strptime(f_proj['updated_at'], datetime_str_ms))
@@ -307,7 +307,11 @@ class UberMunge(object):
                 # Get Data Warehouse id for Client
                 is_active = not f_proj.pop('archived')
                 dw_client = get_client_by_id(f_proj['client_id'])
-                f_proj.update(client_id=dw_client.id)
+                # If no result is returned, set client to RevUnit
+                if dw_client:
+                    f_proj.update(client_id=dw_client.id)
+                else:
+                    f_proj.update(client_id=164)
                 f_proj.update(client_name=dw_client.name)
                 f_proj.update(is_active=is_active)
 
@@ -327,6 +331,7 @@ class UberMunge(object):
                                    ends_on=f_proj['end_date'],)
             db.commit()
 
+    @db_session
     def munge_assignment(self):
         """Converts Forecast API into data warehouse friendly data
 
@@ -338,13 +343,18 @@ class UberMunge(object):
         assignments = self.fore.get_forecast_assignments()
         assignments_list = assignments['assignments']
 
-        for assn in assignments_list:
+        # Get stats about the write
+        total_parent_assns = len(assignments_list)
+
+        print("Writing Assignments ({} Parent Assignments)".format(total_parent_assns))
+        logger.print_progress_bar(iteration=0, total=total_parent_assns)
+        for idx, assn in enumerate(assignments_list):
             # Grab information for split entries
             id = assn.pop('id')
             start_date = assn.pop('start_date')
             end_date = assn.pop('end_date')
             updated_at = assn.pop('updated_at')
-            updated_at = datetime.strptime(updated_at, date_string)
+            updated_at = datetime.strptime(updated_at, datetime_str_ms)
 
             # Convert Allocation to hours from seconds
             allocation = assn.pop('allocation')/3600
@@ -352,13 +362,18 @@ class UberMunge(object):
             # Update Assignment Project and Person fk's to match Data Warehouse
             pr = get_project_by_id(assn['project_id'])
             assn.update(project_id=pr.id)
-            p = get_person_by_id(assn['person_id'])
-            assn.update(person_id=p.id)
 
-            # Generate date list between start/end of assignment
-            dates = self.__make_date_list__(start=start_date, end=end_date)
+            # Check if record has person id, if it does prepare data for next step
+            if assn['person_id']:
+                p = get_person_by_id(assn['person_id'])
+                assn.update(person_id=p.id)
+                # Generate date list between start/end of assignment
+                dates = self.__make_date_list__(start=start_date, end=end_date)
+            else:
+                # Make dates an empty list so it does not write the split assignments to the db
+                dates = []
 
-            # Check if records exist already with our parent id, delete if so
+            # Check if assignment records exist already with our parent id, delete if so
             a_recs = get_assignments_by_parent(parent_id=id)
             for rec in a_recs:
                 Time_Assignment[rec.id].delete()
@@ -382,6 +397,8 @@ class UberMunge(object):
                 else:
                     pass
 
+            db.commit()
+            logger.print_progress_bar(iteration=idx, total=total_parent_assns)
 
     """
     Utility Methods
@@ -679,7 +696,7 @@ class Munger(object):
     def munge_forecast_assignments(self):
         """Converts Forecast API into data warehouse friendly data
 
-        Forecast API is very different than Harvest, so requires quite a bit of munging.
+        The Forecast API is very different than Harvest, so it requires quite a bit of munging.
         Takes the date range from the Forecast entry and splits it into individual business day entries
         Calculates the hours/day for each assignment (source shows in seconds)
         Replaces API identity values with data warehouse ones
