@@ -243,7 +243,28 @@ def get_updated_from_dates():
 
 
 """
+DELETE
+
+These functions trunc or delete records
+"""
+
+@db_session
+def trunc_legacy_entries():
+    db.execute("TRUNCATE public.harvest_entries;")
+
+
+@db_session
+def copy_to_legacy_entries():
+    db.execute("""INSERT INTO harvest_entries 
+                  (SELECT te.id, te.hours, te.spent_date, te.billable, te.billable_rate, te.created_at, te.updated_at, 
+                  te.entry_amount, te.person_id, te.person_name, te.project_id, te.project_name, te.project_code, 
+                  te.client_id, te.client_name, te.task_id, te.task_name 
+                  FROM time_entry te);""")
+
+
+"""
 Utility Functions
+
 These keep code above as clean and non-repetitive as possible.
 """
 

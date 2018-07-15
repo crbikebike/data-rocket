@@ -332,6 +332,71 @@ class UberMunge(object):
             db.commit()
 
     @db_session
+    def munge_time_entries(self):
+        """Pulls Time Entries for a given range and sends them to the data warehouse
+
+        """
+        last_updated = self.time_entry_last_updated
+        entries = self.harv.get_harvest_time_entries(updated_since=last_updated)
+        entries_list = entries['entries']
+        # Get stats for console progress bar
+        total_entries = len(entries_list)
+
+        print("Writing Time Entries ({} total)".format(total_entries))
+        logger.print_progress_bar(iteration=0, total=total_entries)
+        for idx, entry in enumerate(entries_list):
+            # Make keys data warehouse friendly
+            entry.update(person_id=entry.pop('user_id'))
+            entry.update(person_name=entry.pop('user_name'))
+
+            # Calculate the total entry value
+            if entry['billable_rate']:
+                entry.update(entry_amount=(entry['hours'] * entry['billable_rate']))
+            else:
+                entry.update(entry_amount=0)
+
+            # Update person, project, and client fk's to match data warehouse
+            p = get_person_by_id(entry['person_id'])
+            entry.update(person_id=p.id)
+            pr = get_project_by_id(entry['project_id'])
+            entry.update(project_id=pr.id)
+            c = get_client_by_id(entry['client_id'])
+            entry.update(client_id=c.id)
+
+            # If entry exists, update.  Else write new entry
+            te = Time_Entry.get(id=entry['id'])
+            if te:
+                te.set(**entry)
+            else:
+            # Write the new time entry
+                nte = Time_Entry(id=entry['id'],
+                                spent_date=entry['spent_date'],
+                                hours=entry['hours'],
+                                billable=entry['billable'],
+                                billable_rate=entry['billable_rate'],
+                                created_at=entry['created_at'],
+                                updated_at=entry['updated_at'],
+                                entry_amount=entry['entry_amount'],
+                                person_id=entry['person_id'],
+                                person_name=entry['person_name'],
+                                project_id=entry['project_id'],
+                                project_name=entry['project_name'],
+                                project_code=entry['project_code'],
+                                client_id=entry['client_id'],
+                                client_name=entry['client_name'],
+                                task_id=entry['task_id'],
+                                task_name=entry['task_name'])
+
+            # Commit entries
+            db.commit()
+            logger.print_progress_bar(iteration=idx, total=total_entries)
+
+        # Trunc legacy entries table and copy time_entry values to it
+        print("Copying records to legacy entries table")
+        trunc_legacy_entries()
+        copy_to_legacy_entries()
+
+    @db_session
     def munge_assignment(self):
         """Converts Forecast API into data warehouse friendly data
 
@@ -621,7 +686,6 @@ class Munger(object):
         """Grabs tasks list from Harvest and returns them.  No transoformation needed.
 
         """
-
         tasks = self.harv.get_harvest_tasks(updated_since=self.task_last_updated)
         return tasks
 

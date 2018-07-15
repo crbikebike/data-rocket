@@ -58,12 +58,4 @@ class PusherBot(object):
             self.uber.munge_assignment()
 
         if time_entries or full_load:
-            self.munged_time_entries = self.mungy.munge_harvest_time_entries()
-            print('Inserting Time Entry DB records')
-            self.time_entries_list = self.munged_time_entries['time_entries']
-            insert_time_entries_list(self.time_entries_list)
-
-            # Legacy Entry support
-            self.legacy_time_entries_list = self.mungy.munge_legacy_harvest_entries(self.time_entries_list)
-            print('Inserting Legacy Harvest Entry DB records')
-            insert_legacy_time_entries_list(self.legacy_time_entries_list)
+            self.uber.munge_time_entries
