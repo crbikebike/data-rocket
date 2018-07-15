@@ -352,8 +352,8 @@ class UberMunge(object):
                                        client_name=f_proj['client_name'],
                                        is_active=f_proj['is_active'],
                                        updated_at=f_proj['updated_at'],
-                                       starts_on=f_proj['start_date'],
-                                       ends_on=f_proj['end_date'],)
+                                       starts_on=f_proj['starts_on'],
+                                       ends_on=f_proj['ends_on'],)
                 except Exception as e:
                     desc = "Forecast Project Entry Error - id: {}".format(f_proj['forecast_id'])
                     logger.write_load_completion(documents=str(e), description=desc)
