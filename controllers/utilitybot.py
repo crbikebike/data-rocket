@@ -1,12 +1,13 @@
 """
 Some simple functions that don't have a more natural home
 """
-from controllers.ormcontroller import write_rocket_log
 from datetime import datetime
 datetime_string = '%Y-%m-%dT%H:%M:%SZ'
 datetime_str_ms= '%Y-%m-%dT%H:%M:%S.%fZ'
 date_string = '%Y-%m-%d'
 from sys import stdout
+from controllers.ormobjects import DataRocketLog
+from controllers.ormcontroller import db, db_session
 
 class LoggerBot(object):
     """
@@ -19,19 +20,15 @@ class LoggerBot(object):
         self.load_end = datetime.strptime('1984-12-03T00:00:00Z', datetime_string)
         self.load_documents = []
 
-    def start_load_msg(self, entity_name, load_list):
-        record_count = len(load_list)
-        print("Found {qty} {en} records.  Starting Load.".format(qty=record_count, en=entity_name))
-
-    def end_load_msg(self, entity_name, load_list):
-        pass
-
     def write_load_completion(self, documents, description='load completed', success=False):
+        description = description
         now = datetime.now()
         docs = documents
-        success = self.load_success
+        success = success
 
-        write_rocket_log(description=description, timestamp=now, success=success, documents=docs)
+        with db_session:
+            row = DataRocketLog(event_description=description, event_datetime=now, event_success=success,
+                                event_documents=docs)
 
     def print_progress_bar(self, iteration, total, prefix='Progress:', suffix='Complete'
                            , decimals=1, length=100):
@@ -92,4 +89,5 @@ def process_args(argv):
 
 
 """ Instantiate a logger bot for the other files to use"""
+
 logger = LoggerBot()

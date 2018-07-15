@@ -71,26 +71,30 @@ class UberMunge(object):
             full_name = "{fn} {ln}".format(fn=person['first_name'], ln=person['last_name'])
 
             # If a Person is in db update, otherwise insert
-            p = Person.get(harvest_id=harvest_id)
-            if p:
-                p.set(**person)
-            else:
-                np = Person(harvest_id=harvest_id,
-                            forecast_id=person['forecast_id'],
-                            first_name=person['first_name'],
-                            last_name=person['last_name'],
-                            full_name=full_name,
-                            email=person['email'],
-                            timezone=person['timezone'],
-                            weekly_capacity=person['weekly_capacity'],
-                            is_contractor=person['is_contractor'],
-                            is_active=person['is_active'],
-                            roles=person['roles'],
-                            avatar_url=person['avatar_url'],
-                            created_at=person['created_at'],
-                            updated_at=person['updated_at'])
-            # Commit the record
-            db.commit()
+            try:
+                p = Person.get(harvest_id=harvest_id)
+                if p:
+                    p.set(**person)
+                else:
+                    np = Person(harvest_id=harvest_id,
+                                forecast_id=person['forecast_id'],
+                                first_name=person['first_name'],
+                                last_name=person['last_name'],
+                                full_name=full_name,
+                                email=person['email'],
+                                timezone=person['timezone'],
+                                weekly_capacity=person['weekly_capacity'],
+                                is_contractor=person['is_contractor'],
+                                is_active=person['is_active'],
+                                roles=person['roles'],
+                                avatar_url=person['avatar_url'],
+                                created_at=person['created_at'],
+                                updated_at=person['updated_at'])
+                # Commit the record
+                db.commit()
+            except Exception as e:
+                logger.write_load_completion(documents=e, description='Person Error')
+            # Update the on-screen progress bar
             logger.print_progress_bar(iteration=idx + 1,total=len(harvest_people_list))
 
         # Cycle through remaining Forecast people to update forecast_id, if needed
@@ -157,19 +161,23 @@ class UberMunge(object):
             harvest_id = client['harvest_id']
 
             # If a Client is in db update, otherwise insert
-            c = Client.get(harvest_id=harvest_id)
-            if c:
-                c.set(**client)
-            else:
-                nc = Client(harvest_id=harvest_id,
-                            forecast_id=client['forecast_id'],
-                            name=client['name'],
-                            is_active=client['is_active'],
-                            created_at=client['created_at'],
-                            updated_at=client['updated_at'])
+            try:
+                c = Client.get(harvest_id=harvest_id)
+                if c:
+                    c.set(**client)
+                else:
+                    nc = Client(harvest_id=harvest_id,
+                                forecast_id=client['forecast_id'],
+                                name=client['name'],
+                                is_active=client['is_active'],
+                                created_at=client['created_at'],
+                                updated_at=client['updated_at'])
+                # Commit the record
+                db.commit()
+            except Exception as e:
+                logger.write_load_completion(documents=e, description='Client Error')
 
-            # Commit the record
-            db.commit()
+            # Update the on-screen progress bar
             logger.print_progress_bar(iteration=idx + 1, total=len(harvest_client_list))
 
         # Cycle through remaining Forecast clients to update forecast_id, if needed
@@ -213,13 +221,16 @@ class UberMunge(object):
             task.update(updated_at=dt_updated_at)
 
             # If a task is already in the DB, update it.  Otherwise insert it.
-            if Task.get(id=t_id):
-                Task[t_id].set(**task)
-            else:
-                t = Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
-
-            # Commit the record to the db
-            db.commit()
+            try:
+                if Task.get(id=t_id):
+                    Task[t_id].set(**task)
+                else:
+                    t = Task(id=task['id'], name=task['name'], updated_at=task['updated_at'])
+                # Commit the record to the db
+                db.commit()
+            except Exception as e:
+                logger.write_load_completion(documents=e, description='Task Error')
+            # Update the on-screen progress bar
             logger.print_progress_bar(iteration=idx + 1, total=len(harvest_tasks_list))
 
     @db_session
@@ -264,31 +275,32 @@ class UberMunge(object):
         print('Writing Projects')
         logger.print_progress_bar(iteration=0, total=len(harvest_projects_list))
         for idx, proj in enumerate(harvest_projects_list):
-            try:
-                harvest_id = proj['harvest_id']
-            except Exception as e:
-                pass
+            harvest_id = proj['harvest_id']
 
             # If a Project is in db update, otherwise insert
-            pr = Project.get(harvest_id=harvest_id)
-            if pr:
-                pr.set(**proj)
-            else:
-                npr = Project(harvest_id=proj['harvest_id'],
-                              forecast_id=proj['forecast_id'],
-                              name=proj['name'],
-                              code=proj['code'],
-                              client_id=proj['client_id'],
-                              client_name=proj['client_name'],
-                              is_active=proj['is_active'],
-                              is_billable=proj['is_billable'],
-                              budget=proj['budget'],
-                              budget_is_monthly=proj['budget_is_monthly'],
-                              created_at=proj['created_at'],
-                              updated_at=proj['updated_at'],
-                              starts_on=proj['starts_on'],
-                              ends_on=proj['ends_on'],)
-            db.commit()
+            try:
+                pr = Project.get(harvest_id=harvest_id)
+                if pr:
+                    pr.set(**proj)
+                else:
+                    npr = Project(harvest_id=proj['harvest_id'],
+                                  forecast_id=proj['forecast_id'],
+                                  name=proj['name'],
+                                  code=proj['code'],
+                                  client_id=proj['client_id'],
+                                  client_name=proj['client_name'],
+                                  is_active=proj['is_active'],
+                                  is_billable=proj['is_billable'],
+                                  budget=proj['budget'],
+                                  budget_is_monthly=proj['budget_is_monthly'],
+                                  created_at=proj['created_at'],
+                                  updated_at=proj['updated_at'],
+                                  starts_on=proj['starts_on'],
+                                  ends_on=proj['ends_on'],)
+                db.commit()
+            except Exception as e:
+                logger.write_load_completion(documents=e, description='Project Error')
+            #Update on-screen progress bar
             logger.print_progress_bar(iteration=idx + 1, total=len(harvest_projects_list))
 
         # Cycle through remaining Forecast Projects to update records
@@ -338,13 +350,18 @@ class UberMunge(object):
         """
         last_updated = self.time_entry_last_updated
         entries = self.harv.get_harvest_time_entries(updated_since=last_updated)
-        entries_list = entries['entries']
+        entries_list = entries['time_entries']
         # Get stats for console progress bar
         total_entries = len(entries_list)
 
         print("Writing Time Entries ({} total)".format(total_entries))
         logger.print_progress_bar(iteration=0, total=total_entries)
         for idx, entry in enumerate(entries_list):
+            # Convert dates to ORM friendly Python objects
+            entry.update(spent_date=datetime.strptime(entry['spent_date'], date_string))
+            entry.update(created_at=datetime.strptime(entry['created_at'], datetime_string))
+            entry.update(updated_at=datetime.strptime(entry['updated_at'], datetime_string))
+
             # Make keys data warehouse friendly
             entry.update(person_id=entry.pop('user_id'))
             entry.update(person_name=entry.pop('user_name'))
@@ -363,33 +380,37 @@ class UberMunge(object):
             c = get_client_by_id(entry['client_id'])
             entry.update(client_id=c.id)
 
-            # If entry exists, update.  Else write new entry
-            te = Time_Entry.get(id=entry['id'])
-            if te:
-                te.set(**entry)
-            else:
-            # Write the new time entry
-                nte = Time_Entry(id=entry['id'],
-                                spent_date=entry['spent_date'],
-                                hours=entry['hours'],
-                                billable=entry['billable'],
-                                billable_rate=entry['billable_rate'],
-                                created_at=entry['created_at'],
-                                updated_at=entry['updated_at'],
-                                entry_amount=entry['entry_amount'],
-                                person_id=entry['person_id'],
-                                person_name=entry['person_name'],
-                                project_id=entry['project_id'],
-                                project_name=entry['project_name'],
-                                project_code=entry['project_code'],
-                                client_id=entry['client_id'],
-                                client_name=entry['client_name'],
-                                task_id=entry['task_id'],
-                                task_name=entry['task_name'])
+            try:
+                # If entry exists, update.  Else write new entry
+                te = Time_Entry.get(id=entry['id'])
+                if te:
+                    te.set(**entry)
+                else:
+                # Write the new time entry
+                    nte = Time_Entry(id=entry['id'],
+                                    spent_date=entry['spent_date'],
+                                    hours=entry['hours'],
+                                    billable=entry['billable'],
+                                    billable_rate=entry['billable_rate'],
+                                    created_at=entry['created_at'],
+                                    updated_at=entry['updated_at'],
+                                    entry_amount=entry['entry_amount'],
+                                    person_id=entry['person_id'],
+                                    person_name=entry['person_name'],
+                                    project_id=entry['project_id'],
+                                    project_name=entry['project_name'],
+                                    project_code=entry['project_code'],
+                                    client_id=entry['client_id'],
+                                    client_name=entry['client_name'],
+                                    task_id=entry['task_id'],
+                                    task_name=entry['task_name'])
+            except Exception as e:
+                desc = "Time Entry Error: {}, id:{}".format(str(e), entry['id'])
+                logger.write_load_completion(documents=str(e), description=desc)
 
             # Commit entries
             db.commit()
-            logger.print_progress_bar(iteration=idx, total=total_entries)
+            logger.print_progress_bar(iteration=idx + 1, total=total_entries)
 
         # Trunc legacy entries table and copy time_entry values to it
         print("Copying records to legacy entries table")
@@ -453,17 +474,21 @@ class UberMunge(object):
                     split_assn.update(allocation=allocation)
 
                     # Insert the Time Assignment record
-                    ta = Time_Assignment(parent_id=id,
-                                         person_id=assn['person_id'],
-                                         project_id=assn['project_id'],
-                                         assign_date=day,
-                                         allocation=allocation,
-                                         updated_at=updated_at)
+                    try:
+                        ta = Time_Assignment(parent_id=id,
+                                             person_id=assn['person_id'],
+                                             project_id=assn['project_id'],
+                                             assign_date=day,
+                                             allocation=allocation,
+                                             updated_at=updated_at)
+                        db.commit()
+                    except Exception as e:
+                        logger.write_load_completion(documents=e, description='Time Assignment Error')
                 else:
                     pass
 
-            db.commit()
-            logger.print_progress_bar(iteration=idx, total=total_parent_assns)
+            # Update the on-screen progress bar
+            logger.print_progress_bar(iteration=idx + 1, total=total_parent_assns)
 
     """
     Utility Methods

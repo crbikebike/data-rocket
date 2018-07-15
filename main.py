@@ -22,5 +22,4 @@ if __name__ == '__main__':
                  time_entries=['time_entries'])
 
     # Write to completion log
-    logger.load_success = True
-    logger.write_load_completion(argv[1:])
+    logger.write_load_completion(argv[1:], success=True)

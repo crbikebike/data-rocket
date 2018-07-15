@@ -58,4 +58,4 @@ class PusherBot(object):
             self.uber.munge_assignment()
 
         if time_entries or full_load:
-            self.uber.munge_time_entries
+            self.uber.munge_time_entries()
