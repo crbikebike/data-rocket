@@ -156,20 +156,30 @@ The following fuctions fetch info from the db
 
 
 @db_session
+def get_assignments_by_parent(parent_id):
+    assns = select(a for a in Time_Assignment if a.parent_id == parent_id)[:]
+    return assns
+
+
+@db_session
 def get_person_table():
     ppl_tbl = select(person for person in Person)[:]
     return ppl_tbl
 
 
 @db_session
-def get_person_by_harvest_id(harvest_id):
-    person = Person.get(harvest_id=harvest_id)
-    return person
+def get_person_by_id(identifier):
+    """Search the person table for a matching Forecast or Harvest id and return the Data Warehouse object
 
+    :param identifier: int - Forecast or Harvest id
+    :return: full person record from db
+    """
+    person = Person.get(harvest_id=identifier)
 
-@db_session
-def get_person_by_forecast_id(forecast_id):
-    person = Person.get(harvest_id=forecast_id)
+    if person:
+        pass
+    else:
+        person = Person.get(forecast_id=identifier)
     return person
 
 

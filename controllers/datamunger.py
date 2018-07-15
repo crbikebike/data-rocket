@@ -114,15 +114,15 @@ class UberMunge(object):
                                  first_name=f_person['first_name'],
                                  last_name=f_person['last_name'],
                                  full_name=full_name,
-                                 email=person['email'],
+                                 email=f_person['email'],
                                  is_active=f_person['is_active'],
-                                 updated_at=person['updated_at'])
+                                 updated_at=f_person['updated_at'])
             # Commit the records
             db.commit()
 
     @db_session
     def munge_client(self):
-        """
+        """Pulls Harvest and Forecast Clients and inserts/updates records
 
         :return:
         """
@@ -224,6 +224,9 @@ class UberMunge(object):
 
     @db_session
     def munge_project(self):
+        """Pulls Harvest and Forecast projects and inserts/updates records
+
+        """
         updated_since = self.project_last_updated
         harvest_projects = self.harv.get_harvest_projects(updated_since=updated_since)
         harvest_projects_list = harvest_projects['projects']
@@ -322,6 +325,7 @@ class UberMunge(object):
                                    updated_at=f_proj['updated_at'],
                                    starts_on=f_proj['start_date'],
                                    ends_on=f_proj['end_date'],)
+            db.commit()
 
     def munge_assignment(self):
         """Converts Forecast API into data warehouse friendly data
@@ -331,7 +335,31 @@ class UberMunge(object):
         Calculates the hours/day for each assignment (source shows in seconds)
         Replaces API identity values with data warehouse ones
         """
-        pass
+        assignments = self.fore.get_forecast_assignments()
+        assignments_list = assignments['assignments']
+
+        for assn in assignments_list:
+            # Grab information for split entries
+            id = assn.pop('id')
+            start_date = assn.pop('start_date')
+            end_date = assn.pop('end_date')
+
+            # Convert Allocation to hours from seconds
+            allocation = assn.pop('allocation')/3600
+
+            # Update Assignment Project and Person fk's to match Data Warehouse
+            pr = get_project_by_id(assn['project_id'])
+            assn.update(project_id=pr.id)
+            p = get_person_by_id(assn['person_id'])
+            assn.update(person_id=p.id)
+
+            # Generate date list between start/end of assignment
+            dates = self.__make_date_list__(start=start_date, end=end_date)
+
+            # Check if records exist already with our parent id, delete if so
+            a_recs = get_assignments_by_parent(parent_id=id)
+            print(a_recs)
+
 
     """
     Utility Methods
@@ -375,6 +403,14 @@ class UberMunge(object):
             else:
                 pass
         return f_result_set
+
+    def __make_date_list__(self, start, end):
+        # This takes two dates and provides the dates between them, inclusive of start and end
+        start_date = datetime.strptime(start, date_string)
+        end_date = datetime.strptime(end, date_string)
+        dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
+
+        return dates
 
 
 class Munger(object):

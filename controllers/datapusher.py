@@ -55,9 +55,7 @@ class PusherBot(object):
             self.uber.munge_project()
 
         if assignments or full_load:
-            self.assignments_list = self.mungy.munge_forecast_assignments()
-            print('Inserting Forecast Assignment DB records')
-            insert_time_assignment_list(self.assignments_list)
+            self.uber.munge_assignment()
 
         if time_entries or full_load:
             self.munged_time_entries = self.mungy.munge_harvest_time_entries()
