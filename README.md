@@ -32,7 +32,7 @@ $ heroku ps:scale web=0
 
    Setup a job to run nightly in the scheduler console.
 ``` bash
-$ python main.py
+$ python main.py all_tables
 ```
 
 

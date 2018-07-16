@@ -267,8 +267,8 @@ class Forecaster(object):
             past_dates = 2
             future_dates = 3
         else:
-            past_dates = 30
-            future_dates = 90
+            past_dates = 180
+            future_dates = 180
 
         now = datetime.now()
         # Get the first date of the past month
@@ -316,7 +316,7 @@ class Forecaster(object):
         print('Getting Forecast Assignments')
         api_url = 'assignments'
         start_date, end_date = self.__get_forecast_dates__()
-        extra_params = {'start_date': start_date, 'end_date': end_date}
+        extra_params = {'start_date': start_date}
         filters = ['id','start_date','end_date','allocation','updated_at','project_id','person_id']
         assignment_json_result = self.__get_api_data__(api_url, extra_params=extra_params)
 
