@@ -21,34 +21,45 @@ class GarbageCollector(object):
     @db_session
     def sync_people_records(self):
         """Compares source People records with Data Warehouse and removes records that were deleted from source"""
+        # Get your Harv/Forecast People
+        hpeeps = self.harv.get_harvest_users(updated_since=full_load_datetime)['users']
+        fpeeps = self.fore.get_forecast_people()['people']
+        
+        # Get Data Warehouse people
         people_list = select(p for p in Person)[:]
-        harvest_people = self.harv.get_harvest_users(updated_since=full_load_datetime)['users']
-        forecast_people = self.fore.get_forecast_people()['people']
 
-        # Transform into Pandas friendly list of k:v
-        harvest_people = [{'hid': p['id']} for p in harvest_people]
-        forecast_people = [{'fid': p['id'], 'hid': p['harvest_id']} for p in forecast_people]
+        # Make list of dicts for harv/forecast people
+        h_people = [{'hid': p['id']} for p in hpeeps]
+        f_people = [{'fid': p['id'], 'hid': p['harvest_id']} for p in fpeeps]
 
-        # Combine Forecast and Harvest people using Pandas Data Frames
-        hdf = pd.DataFrame(harvest_people)
-        fdf = pd.DataFrame(forecast_people)
-        combined = fdf.merge(hdf, how='outer', on='hid', suffixes=('_fore', '_harv'))
+        # Load them into Data Frames
+        hdf = pd.DataFrame(h_people)
+        fdf = pd.DataFrame(f_people)
 
-        # Convert the combined DataFrame back into a list of dictionaries
-        combined_dict_list = combined.T.apply(lambda x: x.fillna(value=0).to_dict()).tolist()
+        # Merge the two Data Frames into one
+        dfcombined = fdf.merge(hdf, how='outer', on='hid', suffixes=('_fore', '_harv'))
 
-        # Update the Pandas NaN fields to None to match Data Warehouse set
-        for dict in combined_dict_list:
-            for k, v in dict.items():
-                if v == 0.0:
-                    dict.update({k: None})
+        # Make list of dicts from Data Warehouse people
+        dw_people_list = [{'dwid': p.id, 'fid': p.forecast_id, 'hid': p.harvest_id} for p in people_list]
 
-        # Make sets to compare the two data sources
-        dw_people = {(p.forecast_id, p.harvest_id) for p in people_list}
-        combined_set = {(r['fid'], r['hid']) for r in combined_dict_list}
+        # Load into Data Frame
+        dwdf = pd.DataFrame(dw_people_list)
 
-        # Subtract the sets and the remainder is your list to delete
-        delete_set = dw_people - combined_set
+        # Create Super list of all Data Warehouse records, Minor list of all Source records
+        dfsuper = dwdf.merge(dfcombined, how='left', on=['hid', 'fid'])
+        print(dfsuper)
+        dfminor = dwdf.merge(dfcombined, how='right', on=['hid', 'fid'])
+        print(dfminor)
+
+        # Convert those lists into list of tuples so they can be converted into Sets
+        super_list = dfsuper.T.apply(lambda x: x.fillna(value=0).to_dict()).tolist()
+        super_list = [(dict['dwid'], dict['fid'], dict['hid']) for dict in super_list]
+        minor_list = dfminor.T.apply(lambda x: x.fillna(value=0).to_dict()).tolist()
+        minor_list = [(dict['dwid'], dict['fid'], dict['hid']) for dict in minor_list]
+
+        # Subtract the Minor set from the Super set.  That's your set of records that are extra in the DW
+        dfsubtractor = set(super_list) - set(minor_list)
+        print('these are the extra records', dfsubtractor)
 
         """To finish: get data warehouse pk's from the set above and delete them"""
         pass
