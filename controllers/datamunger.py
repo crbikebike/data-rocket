@@ -50,7 +50,7 @@ class UberMunge(object):
         # Update Primary Key, Get Forecast id for each person
         for h_person in harvest_people_list:
             h_person.update(harvest_id=h_person.pop('id'))
-            h_person.update(forecast_id=None)
+            #h_person.update(forecast_id=None)
             # Convert the datetime strings into python datetime objects so the ORM can use them
             h_person.update(created_at=datetime.strptime(h_person['created_at'], datetime_string))
             h_person.update(updated_at=datetime.strptime(h_person['updated_at'], datetime_string))
