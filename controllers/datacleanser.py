@@ -25,6 +25,10 @@ class GarbageCollector(object):
         harvest_people = self.harv.get_harvest_users(updated_since=full_load_datetime)['users']
         forecast_people = self.fore.get_forecast_people()['people']
 
+        # Transform into Pandas friendly list of k:v
+        harvest_people = [{'hid': p['id']} for p in harvest_people]
+        forecast_people = [{'fid': p['id'], 'hid': p['harvest_id']} for p in forecast_people]
+
         # Combine Forecast and Harvest people using Pandas Data Frames
         hdf = pd.DataFrame(harvest_people)
         fdf = pd.DataFrame(forecast_people)
