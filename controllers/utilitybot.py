@@ -2,9 +2,10 @@
 Some simple functions that don't have a more natural home
 """
 from datetime import datetime
-datetime_string = '%Y-%m-%dT%H:%M:%SZ'
-datetime_str_ms= '%Y-%m-%dT%H:%M:%S.%fZ'
-date_string = '%Y-%m-%d'
+datetime_format = '%Y-%m-%dT%H:%M:%SZ'
+datetime_format_ms= '%Y-%m-%dT%H:%M:%S.%fZ'
+date_format = '%Y-%m-%d'
+full_load_datetime = '1984-12-31T00:00:00Z'
 from sys import stdout
 from controllers.ormobjects import DataRocketLog
 from controllers.ormcontroller import db, db_session
@@ -17,7 +18,7 @@ class LoggerBot(object):
         self.load_success = False
         self.load_description = ''
         self.load_start = datetime.now()
-        self.load_end = datetime.strptime('1984-12-03T00:00:00Z', datetime_string)
+        self.load_end = datetime.strptime('1984-12-03T00:00:00Z', datetime_format)
         self.load_documents = []
 
     def write_load_completion(self, documents, description='load completed', success=False):

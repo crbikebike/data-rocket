@@ -6,3 +6,4 @@ datetime
 requests
 pony
 numpy
+pandas

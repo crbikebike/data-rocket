@@ -9,7 +9,7 @@ from collections import deque
 from datetime import datetime, timedelta
 import calendar
 from data_rocket_conf import config as conf
-from controllers.utilitybot import logger
+from controllers.utilitybot import logger, date_format, datetime_format, datetime_format_ms
 
 
 # Variables
@@ -22,15 +22,14 @@ from_date = conf['FROM_DATE']
 
 class Harvester(object):
     # Hits Harvest endpoints and returns their data
+    harvest_base_url = 'https://api.harvestapp.com/v2/'
+    entry_per_page = 100
+    harvest_headers = {'Authorization': auth_token,
+                       'Harvest-Account-ID': harvest_account_id,
+                       'User-Agent': user_agent}
+    harvest_params = {'page_per': entry_per_page}
+
     def __init__(self, is_test=False):
-        self.entry_per_page = 100
-        self.harvest_base_url = 'https://api.harvestapp.com/v2/'
-        self.harvest_headers = {}
-        self.harvest_headers.update(Authorization=auth_token)
-        self.harvest_headers.update({'Harvest-Account-ID': harvest_account_id})
-        self.harvest_headers.update({'User-Agent': user_agent})
-        self.harvest_params = {}
-        self.harvest_params.update(page_per=self.entry_per_page)
         self.is_test = is_test
 
     """
@@ -211,14 +210,13 @@ class Harvester(object):
 
 class Forecaster(object):
     # Grabs Forecast data - Note that the Forecast API is not officially supported
+    forecast_base_url = 'https://api.forecastapp.com/'
+    forecast_headers = {'Authorization': auth_token,
+                             'Forecast-Account-ID': forecast_account_id,
+                             'User-Agent': user_agent}
+    forecast_params = {}
+
     def __init__(self, is_test=False):
-        self.forecast_base_url = 'https://api.forecastapp.com/'
-        self.forecast_headers = {}
-        self.forecast_headers.update(Authorization=auth_token)
-        self.forecast_headers.update({'Forecast-Account-ID': forecast_account_id})
-        self.forecast_headers.update({'User-Agent': user_agent})
-        self.forecast_params = {}
-        self.date_string = '%Y-%m-%d'
         self.is_test = is_test
 
     """
