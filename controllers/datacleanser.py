@@ -110,11 +110,11 @@ class GarbageCollector(object):
     def sync_harvest_time_entries(self):
         """Finds deleted entries from Harvest and removes them from the Data Warehouse"""
         # Set your updated date so you only need to pull a subset of time entries
-        updated_since = datetime.now() - timedelta(days=30)
-        updated_since = datetime.strftime(updated_since, datetime_format_ms)
+        updated_since = datetime.now() - timedelta(days=21)
+        updated_since_str = datetime.strftime(updated_since, datetime_format_ms)
 
         # Get Source Data. Create list of dicts.
-        harv_entries = self.harv.get_harvest_time_entries(updated_since=updated_since)['time_entries']
+        harv_entries = self.harv.get_harvest_time_entries(updated_since=updated_since_str)['time_entries']
         harv_entries = [{'id': entry['id']} for entry in harv_entries]
 
         # Get Data Warehouse Data. Create list of dicts.
