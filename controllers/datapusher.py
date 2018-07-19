@@ -50,4 +50,4 @@ class PusherBot(object):
 
         # Run cleanup routines on Time Entry and Time Assignments
         self.gc.sync_forecast_assignments()
-        self.gc.sync_harvest_time_entries()
+        # self.gc.sync_harvest_time_entries()
