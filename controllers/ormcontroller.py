@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from data_rocket_conf import config as conf
 from psycopg2.extensions import AsIs
 from controllers.ormobjects import *
-from controllers.utilitybot import logger
+
 
 
 # Parse URL to get connection info
@@ -34,7 +34,7 @@ def insert_time_entries_list(time_entry_list):
     # Loop through every entry in the list and write to db
     record_count = len(time_entry_list)
     error_count = 0
-    logger.print_progress_bar(iteration=0, total=record_count)
+    # logger.print_progress_bar(iteration=0, total=record_count)
     for idx, entry in enumerate(time_entry_list):
         columns = AsIs(','.join(entry.keys()))
         values = tuple([entry[column] for column in entry.keys()])
@@ -42,8 +42,8 @@ def insert_time_entries_list(time_entry_list):
             db.execute("INSERT INTO public.time_entry ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-            logger.write_load_completion(documents=e, description='Bulk Time Entry Error')
-        logger.print_progress_bar(iteration=idx, total=record_count)
+            # logger.write_load_completion(documents=e, description='Bulk Time Entry Error')
+        # logger.print_progress_bar(iteration=idx, total=record_count)
     p = "Out of {}".format(record_count)
     print("Errors while inserting time_entries: {err} ({p})".format(err=error_count, p=p))
 
@@ -53,7 +53,7 @@ def insert_time_assignment_list(assignment_list):
     # Loop through every time assignment in the list and write to db
     record_count = len(assignment_list)
     error_count = 0
-    logger.print_progress_bar(iteration=0, total=record_count)
+    # logger.print_progress_bar(iteration=0, total=record_count)
     for idx, assn in enumerate(assignment_list):
         columns = AsIs(','.join(assn.keys()))
         values = tuple([assn[column] for column in assn.keys()])
@@ -61,8 +61,8 @@ def insert_time_assignment_list(assignment_list):
             db.execute("INSERT INTO public.time_assignment ($columns) VALUES $values")
         except Exception as e:
             error_count +=1
-            logger.write_load_completion(documents=e, description='Mass Time Assignment Error')
-        logger.print_progress_bar(iteration=idx, total=record_count)
+            # logger.write_load_completion(documents=e, description='Mass Time Assignment Error')
+        # logger.print_progress_bar(iteration=idx, total=record_count)
 
     p = "Out of {}".format(record_count)
     print("Errors while inserting assignments: {err} ({p})".format(err=error_count, p=p))

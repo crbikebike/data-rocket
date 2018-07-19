@@ -6,7 +6,7 @@ It will greatly simplify the actions taken within the main.py file
 # Imports
 from controllers.datagrabber import Harvester, Forecaster
 from controllers.ormcontroller import *
-from controllers.utilitybot import datetime_string, date_string, datetime_str_ms, logger
+from controllers.utilitybot import datetime_format, date_format, datetime_format_ms, logger, full_load_datetime
 from datetime import datetime, timedelta
 from numpy import is_busday
 from data_rocket_conf import config as conf
@@ -22,7 +22,6 @@ class UberMunge(object):
         self.harv = Harvester(is_test=is_test)
         self.fore = Forecaster(is_test=is_test)
         self.last_updated_dict = get_updated_from_dates()
-        self.full_load_datetime = '2010-01-01T00:00:00Z'
 
     """
     Munge Functions
@@ -52,8 +51,8 @@ class UberMunge(object):
             h_person.update(harvest_id=h_person.pop('id'))
             #h_person.update(forecast_id=None)
             # Convert the datetime strings into python datetime objects so the ORM can use them
-            h_person.update(created_at=datetime.strptime(h_person['created_at'], datetime_string))
-            h_person.update(updated_at=datetime.strptime(h_person['updated_at'], datetime_string))
+            h_person.update(created_at=datetime.strptime(h_person['created_at'], datetime_format))
+            h_person.update(updated_at=datetime.strptime(h_person['updated_at'], datetime_format))
 
             for idx, f_person in enumerate(forecast_people_list):
                 if h_person['harvest_id'] == f_person['harvest_id']:
@@ -95,7 +94,7 @@ class UberMunge(object):
                 desc = "Person Entry Error - id: {}".format(person['harvest_id'])
                 logger.write_load_completion(documents=str(e), description=desc)
             # Update the on-screen progress bar
-            logger.print_progress_bar(iteration=idx + 1,total=len(harvest_people_list))
+            logger.print_progress_bar(iteration=idx + 1, total=len(harvest_people_list))
 
         # Cycle through remaining Forecast people to update forecast_id, if needed
         for f_person in forecast_people_list:
@@ -103,7 +102,7 @@ class UberMunge(object):
             full_name = "{fn} {ln}".format(fn=f_person['first_name'], ln=f_person['last_name'])
             is_active = not f_person.pop('archived')
             f_person.update(is_active=is_active)
-            f_person.update(updated_at=datetime.strptime(f_person['updated_at'], datetime_str_ms))
+            f_person.update(updated_at=datetime.strptime(f_person['updated_at'], datetime_format_ms))
 
             if f_person['harvest_id']:
                 p = Person.get(harvest_id=f_person['harvest_id'])
@@ -148,8 +147,8 @@ class UberMunge(object):
             h_client.update(harvest_id=h_client.pop('id'))
             h_client.update(forecast_id=None)
             # Convert the date keys into Python date objects so ORM can use them
-            h_client.update(created_at=datetime.strptime(h_client['created_at'], datetime_string))
-            h_client.update(updated_at=datetime.strptime(h_client['updated_at'], datetime_string))
+            h_client.update(created_at=datetime.strptime(h_client['created_at'], datetime_format))
+            h_client.update(updated_at=datetime.strptime(h_client['updated_at'], datetime_format))
 
             for idx, f_client in enumerate(forecast_clients_list):
                 if h_client['harvest_id'] == f_client['harvest_id']:
@@ -190,7 +189,7 @@ class UberMunge(object):
             is_active = not f_client.pop('archived')
             f_client.update(is_active=is_active)
             f_client.update(forecast_id=f_client.pop('id'))
-            f_client.update(updated_at=datetime.strptime(f_client['updated_at'], datetime_str_ms))
+            f_client.update(updated_at=datetime.strptime(f_client['updated_at'], datetime_format_ms))
 
             if f_client['harvest_id']:
                 c = Client.get(harvest_id=f_client['harvest_id'])
@@ -226,7 +225,7 @@ class UberMunge(object):
         logger.print_progress_bar(iteration=0, total=len(harvest_tasks_list))
         for idx, task in enumerate(harvest_tasks_list):
             t_id = task['id']
-            dt_updated_at = datetime.strptime(task['updated_at'], datetime_string)
+            dt_updated_at = datetime.strptime(task['updated_at'], datetime_format)
             task.update(updated_at=dt_updated_at)
 
             # If a task is already in the DB, update it.  Otherwise insert it.
@@ -262,12 +261,12 @@ class UberMunge(object):
             h_proj.update(harvest_id=h_proj.pop('id'))
             h_proj.update(forecast_id=None)
             # Convert the date keys into Python date objects so ORM can use them
-            h_proj.update(created_at=datetime.strptime(h_proj['created_at'], datetime_string))
-            h_proj.update(updated_at=datetime.strptime(h_proj['updated_at'], datetime_string))
+            h_proj.update(created_at=datetime.strptime(h_proj['created_at'], datetime_format))
+            h_proj.update(updated_at=datetime.strptime(h_proj['updated_at'], datetime_format))
             if h_proj['starts_on']:
-                h_proj.update(starts_on=datetime.strptime(h_proj['starts_on'], date_string))
+                h_proj.update(starts_on=datetime.strptime(h_proj['starts_on'], date_format))
             if h_proj['ends_on']:
-                h_proj.update(ends_on=datetime.strptime(h_proj['ends_on'], date_string))
+                h_proj.update(ends_on=datetime.strptime(h_proj['ends_on'], date_format))
 
             # Get Data Warehouse id for Client
             dw_client = get_client_by_id(identifier=h_proj['client_id'])
@@ -317,11 +316,11 @@ class UberMunge(object):
         # Cycle through remaining Forecast Projects to update records
         for f_proj in forecast_projects_list:
             f_proj.update(forecast_id=f_proj.pop('id'))
-            f_proj.update(updated_at=datetime.strptime(f_proj['updated_at'], datetime_str_ms))
+            f_proj.update(updated_at=datetime.strptime(f_proj['updated_at'], datetime_format_ms))
             if f_proj['starts_on']:
-                f_proj.update(starts_on=datetime.strptime(f_proj['starts_on'], date_string))
+                f_proj.update(starts_on=datetime.strptime(f_proj['starts_on'], date_format))
             if f_proj['ends_on']:
-                f_proj.update(ends_on=datetime.strptime(f_proj['ends_on'], date_string))
+                f_proj.update(ends_on=datetime.strptime(f_proj['ends_on'], date_format))
 
             # If it has a harvest id, just update the forecast id of the data warehouse project
             if f_proj['harvest_id']:
@@ -376,9 +375,9 @@ class UberMunge(object):
         logger.print_progress_bar(iteration=0, total=total_entries)
         for idx, entry in enumerate(entries_list):
             # Convert dates to ORM friendly Python objects
-            entry.update(spent_date=datetime.strptime(entry['spent_date'], date_string))
-            entry.update(created_at=datetime.strptime(entry['created_at'], datetime_string))
-            entry.update(updated_at=datetime.strptime(entry['updated_at'], datetime_string))
+            entry.update(spent_date=datetime.strptime(entry['spent_date'], date_format))
+            entry.update(created_at=datetime.strptime(entry['created_at'], datetime_format))
+            entry.update(updated_at=datetime.strptime(entry['updated_at'], datetime_format))
 
             # Make keys data warehouse friendly
             entry.update(person_id=entry.pop('user_id'))
@@ -462,7 +461,7 @@ class UberMunge(object):
             start_date = assn.pop('start_date')
             end_date = assn.pop('end_date')
             updated_at = assn.pop('updated_at')
-            updated_at = datetime.strptime(updated_at, datetime_str_ms)
+            updated_at = datetime.strptime(updated_at, datetime_format_ms)
 
             # Convert Allocation to hours from seconds
             allocation = assn.pop('allocation')/3600
@@ -492,7 +491,7 @@ class UberMunge(object):
                 if is_busday(day):
                     split_assn = assn.copy()
                     split_assn.update(parent_id=id)
-                    split_assn.update(assign_date=(day).strftime(date_string))
+                    split_assn.update(assign_date=(day).strftime(date_format))
                     split_assn.update(allocation=allocation)
 
                     # Insert the Time Assignment record
@@ -532,19 +531,19 @@ class UberMunge(object):
              errors if there are no records in a table.
         """
         if is_full_load:
-            self.person_last_updated = self.full_load_datetime
-            self.project_last_updated = self.full_load_datetime
-            self.client_last_updated = self.full_load_datetime
-            self.task_last_updated = self.full_load_datetime
-            self.assn_last_updated = self.full_load_datetime
+            self.person_last_updated = full_load_datetime
+            self.project_last_updated = full_load_datetime
+            self.client_last_updated = full_load_datetime
+            self.task_last_updated = full_load_datetime
+            self.assn_last_updated = full_load_datetime
             self.time_entry_last_updated = conf['FROM_DATE']
         else:
-            self.person_last_updated = self.last_updated_dict['person'].strftime(datetime_string)
-            self.project_last_updated = self.last_updated_dict['project'].strftime(datetime_string)
-            self.client_last_updated = self.last_updated_dict['client'].strftime(datetime_string)
-            self.task_last_updated = self.last_updated_dict['task'].strftime(datetime_string)
-            self.assn_last_updated = self.last_updated_dict['time_assignment'].strftime(datetime_string)
-            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(datetime_string)
+            self.person_last_updated = self.last_updated_dict['person'].strftime(datetime_format)
+            self.project_last_updated = self.last_updated_dict['project'].strftime(datetime_format)
+            self.client_last_updated = self.last_updated_dict['client'].strftime(datetime_format)
+            self.task_last_updated = self.last_updated_dict['task'].strftime(datetime_format)
+            self.assn_last_updated = self.last_updated_dict['time_assignment'].strftime(datetime_format)
+            self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(datetime_format)
 
     def __trim_forecast_results__(self, f_result_set, trim_datetime):
         """This will trim the result set by filtering to items that have a greater updated_at date than trim date
@@ -557,8 +556,8 @@ class UberMunge(object):
 
     def __make_date_list__(self, start, end):
         # This takes two dates and provides the dates between them, inclusive of start and end
-        start_date = datetime.strptime(start, date_string)
-        end_date = datetime.strptime(end, date_string)
+        start_date = datetime.strptime(start, date_format)
+        end_date = datetime.strptime(end, date_format)
         dates = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
 
         return dates
