@@ -16,8 +16,8 @@ Check out the issues list for a view in what the app needs and submit a PR :)
 (https://devcenter.heroku.com/articles/config-vars)
 2. Clone repo
 ``` bash
-$ git clone https://github.com/RevUnit/data-rocket/
 $ cd your dir
+$ git clone https://github.com/RevUnit/data-rocket/
 ```
 3. Make changes, add, commit, and deploy them.  Note that if you add a new module it needs to be added to the requirements.txt or the app will fail.
 ``` bash
@@ -78,3 +78,7 @@ Performs all data manipulation and transformation needed prior to database inser
 **datapusher.py**
 
 Kicks off the munging tasks in the needed order to avoid foreign key constraints
+
+**datacleanser.py**
+
+Finds deleted records from source data and deletes them from the data warehouse also
