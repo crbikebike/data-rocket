@@ -59,7 +59,7 @@ class GarbageCollector(object):
         dfsubtractor = set(super_list) - set(minor_list)
 
         # Loop through the set and delete each entry
-        print("Purging Deleted People")
+        print("Purging Deleted People ({}) Records".format(len(dfsubtractor)))
         for entity in dfsubtractor:
             try:
                 e_id = int(entity[0])
@@ -97,7 +97,7 @@ class GarbageCollector(object):
         df_subtractor = set(super_list) - set(minor_list)
 
         # Loop through each entity in the set and delete from the Data Warehouse
-        print("Purging Deleted Time Assignments")
+        print("Purging Deleted Time Assignments ({}) Records".format(len(df_subtractor)))
         for entity in df_subtractor:
             try:
                 e_id = int(entity[0])
@@ -116,7 +116,7 @@ class GarbageCollector(object):
         harv_entries = [{'id': entry['id']} for entry in harv_entries]
 
         # Get Data Warehouse Data. Create list of dicts.
-        dw_entries = select(te for te in Time_Entry)[:]
+        dw_entries = select(te for te in Time_Entry if te.updated_at > updated_since)[:]
         dw_entries = [{'id': te.id} for te in dw_entries]
 
         # Make DataFrames of each
@@ -137,7 +137,7 @@ class GarbageCollector(object):
         df_subtractor = set(super_list) - set(minor_list)
 
         # Loop through each entity in the set and delete from the Data Warehouse
-        print("Purging Deleted Time Entries")
+        print("Purging Deleted Time Entries ({}) Records".format(len(df_subtractor)))
         for entity in df_subtractor:
             try:
                 e_id = int(entity)
