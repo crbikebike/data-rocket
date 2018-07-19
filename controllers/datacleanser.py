@@ -59,6 +59,7 @@ class GarbageCollector(object):
         dfsubtractor = set(super_list) - set(minor_list)
 
         # Loop through the set and delete each entry
+        print("Purging Deleted People")
         for entity in dfsubtractor:
             try:
                 e_id = int(entity[0])
@@ -96,9 +97,50 @@ class GarbageCollector(object):
         df_subtractor = set(super_list) - set(minor_list)
 
         # Loop through each entity in the set and delete from the Data Warehouse
+        print("Purging Deleted Time Assignments")
         for entity in df_subtractor:
             try:
                 e_id = int(entity[0])
                 Time_Assignment[e_id].delete()
             except Exception as e:
                 logger.write_load_completion(str(e), "Fail while deleting time assignment", success=False)
+
+
+    @db_session
+    def sync_harvest_time_entries(self):
+        """Finds deleted entries from Harvest and removes them from the Data Warehouse"""
+        # Get Source Data. Create list of dicts.
+        updated_since = datetime.now() - timedelta(days=30)
+        updated_since = datetime.strftime(updated_since, datetime_format_ms)
+        harv_entries = self.harv.get_harvest_time_entries(updated_since=updated_since)['time_entries']
+        harv_entries = [{'id': entry['id']} for entry in harv_entries]
+
+        # Get Data Warehouse Data. Create list of dicts.
+        dw_entries = select(te for te in Time_Entry)[:]
+        dw_entries = [{'id': te.id} for te in dw_entries]
+
+        # Make DataFrames of each
+        df_harv = pd.DataFrame(harv_entries)
+        df_dw = pd.DataFrame(dw_entries)
+
+        # Merge to make Super and Minor lists
+        df_super = df_dw.merge(df_harv, how='left', on='id')
+        df_minor = df_dw.merge(df_harv, how='right', on='id')
+
+        # Make lists of dicts, transform into sets of tuples
+        super_list = df_super.T.apply(lambda x: x.fillna(value=0).to_dict()).tolist()
+        super_list = [(dict['id']) for dict in super_list]
+        minor_list = df_minor.T.apply(lambda x: x.fillna(value=0).to_dict()).tolist()
+        minor_list = [(dict['id']) for dict in minor_list]
+
+        # Subtract the sets of super and minor list
+        df_subtractor = set(super_list) - set(minor_list)
+
+        # Loop through each entity in the set and delete from the Data Warehouse
+        print("Purging Deleted Time Entries")
+        for entity in df_subtractor:
+            try:
+                e_id = int(entity)
+                Time_Entry[e_id].delete()
+            except Exception as e:
+                logger.write_load_completion(str(e), "Fail while deleting time entry", success=False)
