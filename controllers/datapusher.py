@@ -3,6 +3,7 @@
 ## Imports
 from controllers.ormcontroller import *
 from controllers.datamunger import UberMunge
+from controllers.datacleanser import GarbageCollector
 from controllers.utilitybot import logger
 
 
@@ -11,6 +12,7 @@ from controllers.utilitybot import logger
 
 class PusherBot(object):
     # This class handles collating and pushing clean data to the DB
+    gc = GarbageCollector()
     def __init__(self, is_test=False):
         self.uber = UberMunge(is_test=is_test)
 
@@ -45,3 +47,7 @@ class PusherBot(object):
 
         if time_entries or all_tables:
             self.uber.munge_time_entries()
+
+        # Run cleanup routines on Time Entry and Time Assignments
+        self.gc.sync_forecast_assignments()
+        self.gc.sync_harvest_time_entries()
