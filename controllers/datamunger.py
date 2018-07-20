@@ -571,7 +571,7 @@ class UberMunge(object):
         if intersect:
             intersect = intersect.pop()
         else:
-            intersect = ''
+            intersect = 'Not Specified'
         harvest_person.update(roles=intersect)
 
     def __trim_forecast_results__(self, f_result_set, trim_datetime):
