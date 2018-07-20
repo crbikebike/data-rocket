@@ -48,6 +48,6 @@ class PusherBot(object):
             self.uber.munge_time_entries()
 
         # Run cleanup routines on Time Entry and Time Assignments to remove deleted source items from data warehouse
-        # self.gc.sync_forecast_assignments()
-        # self.gc.sync_harvest_time_entries()
+        self.gc.sync_forecast_assignments()
+        self.gc.sync_harvest_time_entries()
 
