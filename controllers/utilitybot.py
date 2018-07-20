@@ -49,7 +49,7 @@ class LoggerBot(object):
             filledLength = int(length * iteration // total)
             bar = '.' * filledLength + '-' * (length - filledLength)
             record_count = '({} Records)'.format(total)
-            stdout.write('\r{} |{}| {}% {} {}'.format(prefix, bar, percent, suffix, record_count))
+            stdout.write('\r{} {}% {} {}'.format(prefix, percent, suffix, record_count))
             # Print New Line on Complete
             if iteration == total:
                 stdout.write('\nAll Done\n')

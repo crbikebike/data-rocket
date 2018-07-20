@@ -10,6 +10,7 @@ from controllers.utilitybot import datetime_format, date_format, datetime_format
 from datetime import datetime, timedelta
 from numpy import is_busday
 from data_rocket_conf import config as conf
+import json
 
 # Classes
 class UberMunge(object):
@@ -49,10 +50,13 @@ class UberMunge(object):
         # Update Primary Key, Get Forecast id for each person
         for h_person in harvest_people_list:
             h_person.update(harvest_id=h_person.pop('id'))
-            #h_person.update(forecast_id=None)
+
             # Convert the datetime strings into python datetime objects so the ORM can use them
             h_person.update(created_at=datetime.strptime(h_person['created_at'], datetime_format))
             h_person.update(updated_at=datetime.strptime(h_person['updated_at'], datetime_format))
+
+            # Replace the roles key with primary role
+            self.__set_primary_role__(h_person)
 
             for idx, f_person in enumerate(forecast_people_list):
                 if h_person['harvest_id'] == f_person['harvest_id']:
@@ -517,7 +521,6 @@ class UberMunge(object):
     
     These help keep code less repetitive
     """
-
     def set_load_dates(self, is_full_load):
         """These dates determine the payload size of the calls made to Harvest and Forecast APIs
 
@@ -544,6 +547,32 @@ class UberMunge(object):
             self.task_last_updated = self.last_updated_dict['task'].strftime(datetime_format)
             self.assn_last_updated = self.last_updated_dict['time_assignment'].strftime(datetime_format)
             self.time_entry_last_updated = self.last_updated_dict['time_entry'].strftime(datetime_format)
+
+    def __set_primary_role__(self, harvest_person):
+        """Takes in a single person entry from Harvest api and replaces rows list with a single primary role.
+
+        :param harvest_person: a dict from the harvest API
+        :return: None
+        """
+        # The order of this set matters when determining hierarchy of roles.  The roles at the end of the set win.
+        role_set = {'Product Team', 'Technology', 'Design (Ops)', 'Design (Support)',
+                    'ML Team', 'Strategy', 'Mission Control', 'Exec'}
+
+        # Load the json result into a set and intersect with the master set of roles
+        roles = json.loads(harvest_person['roles'])
+        person_role_set = {role for role in roles}
+        intersect = role_set & person_role_set
+
+        # If more than one role is found in the intersection, pop the roles until only one is left
+        while len(intersect) > 1:
+            intersect.pop()
+
+        # Convert remaining value to str and update the harvest_person
+        if intersect:
+            intersect = intersect.pop()
+        else:
+            intersect = ''
+        harvest_person.update(roles=intersect)
 
     def __trim_forecast_results__(self, f_result_set, trim_datetime):
         """This will trim the result set by filtering to items that have a greater updated_at date than trim date

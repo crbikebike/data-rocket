@@ -1,7 +1,6 @@
 ### Purpose of file: This is the controller that will perform file data gathering and push to the db ###
 
 ## Imports
-from controllers.ormcontroller import *
 from controllers.datamunger import UberMunge
 from controllers.datacleanser import GarbageCollector
 from controllers.utilitybot import logger
@@ -48,7 +47,7 @@ class PusherBot(object):
         if time_entries or all_tables:
             self.uber.munge_time_entries()
 
-        # Run cleanup routines on Time Entry and Time Assignments
-        self.gc.sync_forecast_assignments()
-        self.gc.sync_harvest_time_entries()
+        # Run cleanup routines on Time Entry and Time Assignments to remove deleted source items from data warehouse
+        # self.gc.sync_forecast_assignments()
+        # self.gc.sync_harvest_time_entries()
 

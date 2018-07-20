@@ -21,6 +21,7 @@ class GarbageCollector(object):
     @db_session
     def sync_people_records(self):
         """Compares source People records with Data Warehouse and removes records that were deleted from source"""
+        print("Starting People Records Sync")
         # Get your Harv/Forecast People
         hpeeps = self.harv.get_harvest_users(updated_since=full_load_datetime)['users']
         fpeeps = self.fore.get_forecast_people()['people']
@@ -72,6 +73,7 @@ class GarbageCollector(object):
     def sync_forecast_assignments(self):
         """Finds deleted entries from Forecast and removes them from the Data Warehouse"""
         # Get Source Data. Create list of dicts.
+        print("Starting Time Assignments Sync")
         forecast_assignments = self.fore.get_forecast_assignments()['assignments']
         assn_list = [{'fid': assn['id']} for assn in forecast_assignments]
 
@@ -97,7 +99,7 @@ class GarbageCollector(object):
         df_subtractor = set(super_list) - set(minor_list)
 
         # Loop through each entity in the set and delete from the Data Warehouse
-        print("Purging Deleted Time Assignments ({}) Records".format(len(df_subtractor)))
+        print("Purging Deleted Time Assignments ({} Records)".format(len(df_subtractor)))
         for entity in df_subtractor:
             try:
                 e_id = int(entity[0])
@@ -109,6 +111,7 @@ class GarbageCollector(object):
     @db_session
     def sync_harvest_time_entries(self):
         """Finds deleted entries from Harvest and removes them from the Data Warehouse"""
+        print("Starting Time Entries Sync")
         # Set your updated date so you only need to pull a subset of time entries
         updated_since = datetime.now() - timedelta(days=21)
         updated_since_str = datetime.strftime(updated_since, datetime_format_ms)
@@ -139,7 +142,7 @@ class GarbageCollector(object):
         df_subtractor = set(super_list) - set(minor_list)
 
         # Loop through each entity in the set and delete from the Data Warehouse
-        print("Purging Deleted Time Entries ({}) Records".format(len(df_subtractor)))
+        print("Purging Deleted Time Entries ({} Records)".format(len(df_subtractor)))
         for entity in df_subtractor:
             try:
                 e_id = int(entity)
