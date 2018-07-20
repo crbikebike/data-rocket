@@ -570,6 +570,7 @@ class UberMunge(object):
         # Convert remaining value to str and update the harvest_person
         if intersect:
             intersect = intersect.pop()
+            intersect.replace('"', '')
         else:
             intersect = 'Not Specified'
         harvest_person.update(roles=intersect)

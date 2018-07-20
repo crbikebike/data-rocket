@@ -31,7 +31,7 @@ class Person(db.Entity):
     weekly_capacity = Optional(Decimal)
     is_contractor = Optional(bool)
     is_active = Optional(bool)
-    roles = Optional(Json)
+    roles = Optional(str, nullable=True)
     avatar_url = Optional(str, nullable=True)
     created_at = Optional(datetime)
     updated_at = Optional(datetime)
