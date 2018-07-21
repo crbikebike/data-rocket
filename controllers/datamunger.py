@@ -374,6 +374,7 @@ class UberMunge(object):
         entries_list = entries['time_entries']
         # Get stats for console progress bar
         total_entries = len(entries_list)
+        rounder = lambda x: round(x*4)/4
 
         print("Writing Time Entries ({} total)".format(total_entries))
         logger.print_progress_bar(iteration=0, total=total_entries)
@@ -386,6 +387,9 @@ class UberMunge(object):
             # Make keys data warehouse friendly
             entry.update(person_id=entry.pop('user_id'))
             entry.update(person_name=entry.pop('user_name'))
+
+            # Round the hours field to match the billing preferences used in Harvest
+            entry.update(hours=rounder(entry['hours']))
 
             # Calculate the total entry value
             if entry['billable_rate']:
