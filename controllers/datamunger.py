@@ -20,9 +20,12 @@ class UberMunge(object):
     update rather than load in a bulk transaction after all records are transformed.
     """
     def __init__(self, is_test=False):
-        self.harv = Harvester(is_test=is_test)
-        self.fore = Forecaster(is_test=is_test)
-        self.last_updated_dict = get_updated_from_dates()
+        if is_test:
+            pass
+        else:
+            self.harv = Harvester(is_test=is_test)
+            self.fore = Forecaster(is_test=is_test)
+            self.last_updated_dict = get_updated_from_dates()
 
     """
     Munge Functions
