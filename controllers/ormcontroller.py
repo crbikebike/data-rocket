@@ -17,7 +17,7 @@ if conf['DB_CONN']:
             host=pg_url.hostname, password=pg_url.password, port=pg_url.port)
 else:
     # If running unit test, use sqlite in memory
-    db.bind(provider='sqlite', filename=':memory:')
+    db.bind(provider='sqlite', filename='unit_test.sqlite', create_db=True)
     print("RUNNING UNIT TESTS ON DB IN MEMORY.  IF THAT IS NOT INTENDED CHECK YOUR CONF FILE")
 
 set_sql_debug(False)

@@ -63,7 +63,7 @@ class MockForecaster(MockParent):
         return forecast_projects
 
     def get_forecast_people(self):
-        filters = ['id', 'harvest_user_id', 'first_name', 'last_name', 'email', 'updated_at', 'archived']
+        filters = ['id', 'harvest_id', 'first_name', 'last_name', 'email', 'updated_at', 'archived']
         forecast_people['people'] = self.filter_results(forecast_people['people'], filters)
         return forecast_people
 
@@ -134,7 +134,6 @@ forecast_people = json.loads(
                 "NV",
                 "Growth",
                 "Non-Billable",
-                "Strategy",
                 "Exec"
             ],
             "updated_at": "2018-07-20T03:22:54.749Z",

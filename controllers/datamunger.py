@@ -566,7 +566,13 @@ class UberMunge(object):
                     'ML Team', 'Strategy', 'Mission Control', 'Exec'}
 
         # Load the json result into a set and intersect with the master set of roles
-        roles = json.loads(harvest_person['roles'])
+        if type(harvest_person['roles']) == str:
+            try:
+                roles = json.loads(harvest_person['roles'])
+            except:
+                pass
+        else:
+            roles = harvest_person['roles']
         person_role_set = {role for role in roles}
         intersect = role_set & person_role_set
 

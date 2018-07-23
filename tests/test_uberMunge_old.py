@@ -1,6 +1,8 @@
-from nose.tools import *
+import unittest
 from controllers.datamunger import UberMunge
 from tests.mock_data.mock_harvest_apis import MockHarvester, MockForecaster
+from controllers.ormcontroller import db, db_session, select
+from controllers.ormobjects import *
 
 mock_datetime = '1984-12-31T00:00:00Z'
 
@@ -25,27 +27,30 @@ def get_mock_data(munger):
 Perform Tests
 """
 
+
+@db_session
 def test_munge_person():
     uber.munge_person()
-    self.fail()
+    peeps = select(p for p in Person)[:]
+    assert len(peeps) > 0
 
 def test_munge_client():
-    self.fail()
+    pass
 
 def test_munge_task():
-    self.fail()
+    pass
 
 def test_munge_project():
-    self.fail()
+    pass
 
 def test_munge_time_entries():
-    self.fail()
+    pass
 
 def test_munge_assignment():
-    self.fail()
+    pass
 
 def test_set_load_dates():
-    self.fail()
+    pass
 
 
 get_mock_data(uber)
