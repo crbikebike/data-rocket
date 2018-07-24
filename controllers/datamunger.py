@@ -263,6 +263,7 @@ class UberMunge(object):
         # Update Primary Key, get Forecast ID for each record
         for h_proj in harvest_projects_list:
             h_proj.update(harvest_id=h_proj.pop('id'))
+            h_proj.update(budget=h_proj.pop('cost_budget'))
             h_proj.update(forecast_id=None)
             # Convert the date keys into Python date objects so ORM can use them
             h_proj.update(created_at=datetime.strptime(h_proj['created_at'], datetime_format))

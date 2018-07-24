@@ -78,7 +78,7 @@ class Harvester(object):
         root_key = 'projects'
         project_params = {}
         project_params.update(updated_since=updated_since)  # Only pull entires updated since this date
-        filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'budget', 'budget_is_monthly',
+        filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'cost_budget', 'budget_is_monthly',
                    'created_at', 'updated_at', 'starts_on', 'ends_on', 'client']
 
         # Perform data pull
