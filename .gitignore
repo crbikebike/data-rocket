@@ -4,6 +4,11 @@ controllers/__pycache__/
 *.py[cod]
 *$py.class
 
+# ds stores
+.DS_Store/
+tests/.DS_Store/
+tests/mock_data/.DS_Store/
+
 # Scrap files
 scraps/
 
