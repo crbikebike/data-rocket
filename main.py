@@ -14,7 +14,7 @@ config = process_args(argv)
 if __name__ == '__main__':
 
     # Make the PusherBot
-    pb = PusherBot(is_test=drc['DEBUG'])
+    pb = PusherBot()
 
     # Load all data flagged as true and push to db
     pb.load_data(full_load=config['full_load'], all_tables=config['all_tables'], people=config['people'], clients=config['clients'],

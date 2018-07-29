@@ -20,9 +20,12 @@ class UberMunge(object):
     update rather than load in a bulk transaction after all records are transformed.
     """
     def __init__(self, is_test=False):
-        self.harv = Harvester(is_test=is_test)
-        self.fore = Forecaster(is_test=is_test)
-        self.last_updated_dict = get_updated_from_dates()
+        if is_test:
+            pass
+        else:
+            self.harv = Harvester(is_test=is_test)
+            self.fore = Forecaster(is_test=is_test)
+            self.last_updated_dict = get_updated_from_dates()
 
     """
     Munge Functions
@@ -58,11 +61,23 @@ class UberMunge(object):
             # Replace the roles key with primary role
             self.__set_primary_role__(h_person)
 
+            # Try to find a Forecast id in the newly pulled list
             for idx, f_person in enumerate(forecast_people_list):
                 if h_person['harvest_id'] == f_person['harvest_id']:
                     h_person.update(forecast_id=f_person['id'])
                     forecast_people_list.pop(idx)
                 else:
+                    pass
+
+            # Also see if the person has a Forecast ID in the db if the person still doesn't have a Forecast ID
+            if 'forecast_id' not in h_person.keys():
+                try:
+                    p = Person.get(harvest_id=h_person['harvest_id'])
+                    if p:
+                        h_person.update(forecast_id=p.forecast_id)
+                    else:
+                        h_person.update(forecast_id=None)
+                except:
                     pass
 
         # For each Person record, check if in db and then insert/update accordingly
@@ -71,6 +86,7 @@ class UberMunge(object):
         for idx, person in enumerate(harvest_people_list):
             harvest_id = person['harvest_id']
             full_name = "{fn} {ln}".format(fn=person['first_name'], ln=person['last_name'])
+
 
             # If a Person is in db update, otherwise insert
             try:
@@ -564,7 +580,13 @@ class UberMunge(object):
                     'ML Team', 'Strategy', 'Mission Control', 'Exec'}
 
         # Load the json result into a set and intersect with the master set of roles
-        roles = json.loads(harvest_person['roles'])
+        if type(harvest_person['roles']) == str:
+            try:
+                roles = json.loads(harvest_person['roles'])
+            except:
+                pass
+        else:
+            roles = harvest_person['roles']
         person_role_set = {role for role in roles}
         intersect = role_set & person_role_set
 

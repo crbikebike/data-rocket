@@ -8,14 +8,17 @@ from data_rocket_conf import config as conf
 from psycopg2.extensions import AsIs
 from controllers.ormobjects import *
 
+if conf['DB_CONN']:
+    # Parse URL to get connection info
+    pg_url = urlparse(conf['DB_CONN'])
 
-
-# Parse URL to get connection info
-pg_url = urlparse(conf['DB_CONN'])
-
-# Create database binding to PostgreSQL
-db.bind(provider='postgres', user=pg_url.username, database=pg_url.path[1:],
-        host=pg_url.hostname, password=pg_url.password, port=pg_url.port)
+    # Create database binding to PostgreSQL
+    db.bind(provider='postgres', user=pg_url.username, database=pg_url.path[1:],
+            host=pg_url.hostname, password=pg_url.password, port=pg_url.port)
+else:
+    # If running unit test, use sqlite in memory
+    db.bind(provider='sqlite', filename='unit_test.sqlite', create_db=True)
+    print("RUNNING UNIT TESTS ON DB IN MEMORY.  IF THAT IS NOT INTENDED CHECK YOUR CONF FILE")
 
 set_sql_debug(False)
 # Create ORM mapping, tables if necessary

@@ -7,3 +7,4 @@ requests
 pony
 numpy
 pandas
+nose
