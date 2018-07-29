@@ -1,4 +1,4 @@
-from controllers.datagrabber import Harvester, Forecaster
+
 import json
 
 
@@ -26,64 +26,81 @@ class MockParent:
 class MockHarvester(MockParent):
 
     def get_harvest_time_entries(self, updated_since):
+        json_copy = harvest_time_entries
+        hte = json.loads(json_copy)
         filters = ['id', 'spent_date', 'hours', 'billable', 'billable_rate', 'created_at', 'updated_at',
                    'user', 'client', 'project', 'task']
-        harvest_time_entries['time_entries'] = self.filter_results(harvest_time_entries['time_entries'], filters)
-        return harvest_time_entries
+        hte['time_entries'] = self.filter_results(hte['time_entries'], filters)
+        return hte
 
     def get_harvest_users(self, updated_since):
+        json_copy = harvest_users
+        h_peeps = json.loads(json_copy)
         filters = ['id', 'first_name', 'last_name', 'email', 'timezone', 'weekly_capacity', 'is_contractor',
                    'is_active', 'roles', 'avatar_url', 'created_at', 'updated_at']
-        harvest_users['users'] = self.filter_results(harvest_users['users'], filters)
-        return harvest_users
+        h_peeps['users'] = self.filter_results(h_peeps['users'], filters)
+        return h_peeps
 
     def get_harvest_clients(self, updated_since):
+        json_copy = harvest_clients
+        hc = json.loads(json_copy)
         filters = ['id', 'name', 'is_active', 'created_at', 'updated_at']
-        harvest_clients['clients'] = self.filter_results(harvest_clients['clients'], filters)
-        return harvest_clients
+        hc['clients'] = self.filter_results(hc['clients'], filters)
+        return hc
 
     def get_harvest_projects(self, updated_since):
+        json_copy = harvest_projects
+        hp = json.loads(json_copy)
         filters = ['id', 'name', 'code', 'is_active', 'is_billable', 'budget', 'budget_is_monthly',
                    'created_at', 'updated_at', 'starts_on', 'ends_on', 'client']
-        harvest_projects['projects'] = self.filter_results(harvest_projects['projects'], filters)
-        return harvest_projects
+        hp['projects'] = self.filter_results(hp['projects'], filters)
+        return hp
 
     def get_harvest_tasks(self, updated_since):
+        json_copy = harvest_tasks
+        ht = json.loads(json_copy)
         filters = ['id', 'name', 'updated_at']
-        harvest_tasks['tasks'] = self.filter_results(harvest_tasks['tasks'], filters)
-        return harvest_tasks
+        ht['tasks'] = self.filter_results(ht['tasks'], filters)
+        return ht
 
 
 class MockForecaster(MockParent):
 
     def get_forecast_projects(self):
+        json_copy = forecast_projects
+        fp = json.loads(json_copy)
         filters = ['id', 'name', 'code', 'start_date', 'end_date', 'harvest_id', 'client_id',
                    'updated_at', 'archived']
-        forecast_projects['projects'] = self.filter_results(forecast_projects, filters)
-        return forecast_projects
+        fp['projects'] = self.filter_results(fp, filters)
+        return fp
 
     def get_forecast_people(self):
+        json_copy = forecast_people
+        f_peeps = json.loads(json_copy)
         filters = ['id', 'harvest_id', 'first_name', 'last_name', 'email', 'updated_at', 'archived']
-        forecast_people['people'] = self.filter_results(forecast_people['people'], filters)
-        return forecast_people
+        f_peeps['people'] = self.filter_results(f_peeps['people'], filters)
+        return f_peeps
 
     def get_forecast_assignments(self):
+        json_copy = forecast_assignments
+        fa = json.loads(json_copy)
         filters = ['id', 'start_date', 'end_date', 'allocation', 'updated_at', 'project_id', 'person_id']
-        forecast_assignments['assignments'] = self.filter_results(forecast_assignments['assignments'], filters)
-        return forecast_assignments
+        fa['assignments'] = self.filter_results(fa['assignments'], filters)
+        return fa
 
     def get_forecast_clients(self):
+        json_copy = forecast_clients
+        fc = json.loads(json_copy)
         filters = ['id', 'name', 'harvest_id', 'updated_at', 'archived']
-        forecast_clients['clients'] = self.filter_results(forecast_clients['clients'], filters)
-        return forecast_clients
+        fc['clients'] = self.filter_results(fc['clients'], filters)
+        return fc
 
 
 """
 Mock Data below
 """
 
-forecast_clients = json.loads(
-    """
+forecast_clients = """
     {
     "clients": [
         {
@@ -113,10 +130,8 @@ forecast_clients = json.loads(
         ]
     }
     """
-)
 
-forecast_people = json.loads(
-    """
+forecast_people = """
     {
     "people": [
         {
@@ -208,10 +223,8 @@ forecast_people = json.loads(
         ]
     }
     """
-)
 
-forecast_projects = json.loads(
-    """
+forecast_projects ="""
     {
     "projects": [
         {
@@ -247,10 +260,8 @@ forecast_projects = json.loads(
         ]
     }
     """
-)
 
-forecast_assignments = json.loads(
-    """
+forecast_assignments = """
     {
     "assignments": [
         {
@@ -326,10 +337,8 @@ forecast_assignments = json.loads(
         ]
     }
     """
-)
 
-harvest_tasks = json.loads(
-    """
+harvest_tasks = """
     {
     "tasks": [
         {
@@ -387,10 +396,8 @@ harvest_tasks = json.loads(
     }
     }
     """
-)
 
-harvest_projects = json.loads(
-    """
+harvest_projects = """
     {
     "projects": [
         {
@@ -558,10 +565,8 @@ harvest_projects = json.loads(
     }
     }
     """
-)
 
-harvest_clients = json.loads(
-    """
+harvest_clients = """
     {
     "clients": [
         {
@@ -606,10 +611,8 @@ harvest_clients = json.loads(
     }
     }
     """
-)
 
-harvest_users = json.loads(
-                    """{
+harvest_users = """{
                         "users": [
                             {
                                 "id": 1111111,
@@ -657,7 +660,10 @@ harvest_users = json.loads(
                                 "default_hourly_rate": null,
                                 "cost_rate": null,
                                 "roles": [
-                                    "Design (Ops)"
+                                    "Design (Ops)",
+                                    "Pantswearer",
+                                    "Contractor"
+                                    
                                 ],
                                 "avatar_url": "https://yahoo.com"
                             },
@@ -681,8 +687,38 @@ harvest_users = json.loads(
                                 "updated_at": "2018-07-17T16:57:28Z",
                                 "default_hourly_rate": 100,
                                 "cost_rate": 50,
+                                "roles": ["Exec",
+                                        "Full-Time",
+                                        "Growth",
+                                        "Non-Billable",
+                                        "NV",
+                                        "Strategy"
+                                ],
+                                "avatar_url": ""
+                            },
+                            {
+                                "id": 4444444,
+                                "first_name": "Tony",
+                                "last_name": "VPDude",
+                                "email": "chris@imavp.net",
+                                "telephone": "",
+                                "timezone": "Pacific Time (US & Canada)",
+                                "weekly_capacity": 144000,
+                                "has_access_to_all_future_projects": false,
+                                "is_contractor": true,
+                                "is_admin": false,
+                                "is_project_manager": false,
+                                "can_see_rates": false,
+                                "can_create_projects": false,
+                                "can_create_invoices": false,
+                                "is_active": true,
+                                "created_at": "2018-01-30T00:42:50Z",
+                                "updated_at": "2018-07-17T16:57:28Z",
+                                "default_hourly_rate": 100,
+                                "cost_rate": 50,
                                 "roles": [
-                                    "Contractor",
+                                    "Design (Support)",
+                                    "Mission Control",
                                     "Product"
                                 ],
                                 "avatar_url": ""
@@ -702,10 +738,9 @@ harvest_users = json.loads(
                         }
                     }
                     """
-                    )
 
-harvest_time_entries = json.loads(
-                        """
+
+harvest_time_entries = """
                         {
                         "time_entries": [
                                     {
@@ -892,4 +927,4 @@ harvest_time_entries = json.loads(
                                 "last": ""
                                 }
                         }
-                        """)
+                        """
