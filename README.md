@@ -1,8 +1,7 @@
 # Data Rocket 2.0
 
-> Launching RevUnit's data to the moon (data warehouse)
 
-Welcome!  This project aims to automatically push all of RevUnit's separate data into one data warehouse, powering Business Intelligence initiatives.  Highly focused on Harvest and Forecast to start.
+Welcome!  This project aims to automatically push separate data into one data warehouse, powering Business Intelligence initiatives.  Highly focused on Harvest and Forecast to start.
 
 It is a Python3 app and pushes to a PostgreSQL database.
 
@@ -17,7 +16,7 @@ Check out the issues list for a view in what the app needs and submit a PR :)
 2. Clone repo
 ``` bash
 $ cd your dir
-$ git clone https://github.com/RevUnit/data-rocket/
+$ 
 ```
 3. Make changes, add, commit, and deploy them.  Note that if you add a new module it needs to be added to the requirements.txt or the app will fail.
 ``` bash
