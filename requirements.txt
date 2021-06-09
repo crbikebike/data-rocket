@@ -1,4 +1,4 @@
-pip==9.0.3
+pip==19.2
 requests
 flask
 psycopg2-binary
